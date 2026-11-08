@@ -1,7 +1,7 @@
 #############################################################################
 #
 # ViSP, open source Visual Servoing Platform software.
-# Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+# Copyright (C) 2005 - 2025 by Inria. All rights reserved.
 #
 # This software is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GPL, please contact Inria about acquiring a ViSP Professional
 # Edition License.
 #
-# See http://visp.inria.fr for more information.
+# See https://visp.inria.fr for more information.
 #
 # This software was developed at:
 # Inria Rennes - Bretagne Atlantique
@@ -31,9 +31,6 @@
 # Description:
 # ViSP overall configuration file. Add extra compilation flags.
 #
-# Authors:
-# Fabien Spindler
-#
 #############################################################################
 
 # Warning: here ViSPDetectPlatform.cmake should be called before this file to set ARM var used below
@@ -41,19 +38,21 @@
 set(VISP_EXTRA_C_FLAGS "")
 set(VISP_EXTRA_CXX_FLAGS "")
 
-macro(add_extra_compiler_option option)
+macro(add_extra_compiler_options options)
   if(CMAKE_BUILD_TYPE)
     set(CMAKE_TRY_COMPILE_CONFIGURATION ${CMAKE_BUILD_TYPE})
   endif()
-  vp_check_flag_support(CXX "${option}" _varname "")
-  if(_varname)
-    list(APPEND VISP_EXTRA_CXX_FLAGS ${option})
-  endif()
+  foreach(option ${options})
+    vp_check_flag_support(CXX "${option}" _varname "${VISP_EXTRA_CXX_FLAGS}")
+    if(${_varname})
+      list(APPEND VISP_EXTRA_CXX_FLAGS ${option})
+    endif()
 
-  vp_check_flag_support(C "${option}" _varname "")
-  if(_varname)
-    list(APPEND VISP_EXTRA_C_FLAGS ${option})
-  endif()
+    vp_check_flag_support(C "${option}" _varname "${VISP_EXTRA_C_FLAGS}")
+    if(${_varname})
+      list(APPEND VISP_EXTRA_C_FLAGS ${option})
+    endif()
+  endforeach()
 endmacro()
 
 macro(add_extra_compiler_option_enabling option var_enabling flag)
@@ -86,14 +85,38 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") #
   add_extra_compiler_option_enabling(-Wfloat-equal       ACTIVATE_WARNING_FLOAT_EQUAL     OFF)
   add_extra_compiler_option_enabling(-Wsign-conversion   ACTIVATE_WARNING_SIGN_CONVERSION OFF)
   add_extra_compiler_option_enabling(-Wshadow            ACTIVATE_WARNING_SHADOW          OFF)
+  add_extra_compiler_option_enabling(-ffast-math         ENABLE_FAST_MATH                 OFF)
 elseif(MSVC)
   # Add specific compilation flags for Windows Visual
   add_extra_compiler_option_enabling(/Wall               ACTIVATE_WARNING_ALL             OFF)
-  if(MSVC80 OR MSVC90 OR MSVC10 OR MSVC11 OR MSVC14)
+  add_extra_compiler_option_enabling(/fp:fast            ENABLE_FAST_MATH                 OFF)
+  if(NOT " ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}" MATCHES " /EH")
     # To avoid compiler warning (level 4) C4571, compile with /EHa if you still want
     # your catch(...) blocks to catch structured exceptions.
-    add_extra_compiler_option("/EHa")
+    # But add only /EHa if not already enabled to avoid the following warning
+    # cl : Command line warning D9025 : overriding '/EHs' with '/EHa'
+    add_extra_compiler_options("/EHa")
   endif()
+endif()
+
+if((NOT VISP_HAVE_NULLPTR) AND (VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_98) AND (NOT MSVC))
+  add_extra_compiler_options("-Wno-c++11-compat")
+  add_extra_compiler_options("-Wno-c++0x-compat")
+endif()
+
+# Mute warnings with clang-cl like:
+# - vpException.h(128,40): warning : noexcept specifications are incompatible with C++98 [-Wc++98-compat]
+# - vpArray2D.h(299,10): warning : 'auto' type specifier is incompatible with C++98 [-Wc++98-compat]
+# - pugixml.hpp(416,22): warning : 'long long' is incompatible with C++98 [-Wc++98-compat-pedantic]
+# - vpArray2D.h(307,49): warning : unsafe pointer arithmetic [-Wunsafe-buffer-usage]
+# - vpConfig.h(561,9): warning : macro name is a reserved identifier [-Wreserved-macro-identifier]
+# - vpCameraParameters.cpp(668,3): warning : default label in switch which covers all enumeration values [-Wcovered-switch-default]
+if(MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_extra_compiler_options("-Wno-c++98-compat")
+  add_extra_compiler_options("-Wno-c++98-compat-pedantic")
+  add_extra_compiler_options("-Wno-unsafe-buffer-usage")
+  add_extra_compiler_options("-Wno-reserved-macro-identifier")
+  add_extra_compiler_options("-Wno-covered-switch-default")
 endif()
 
 # Note here ViSPDetectPlatform.cmake should be called before this file to set ARM var
@@ -107,69 +130,109 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION
   #
   # See here: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=77728
   # and here: https://stackoverflow.com/questions/48149323/what-does-the-gcc-warning-project-parameter-passing-for-x-changed-in-gcc-7-1-m
-  add_extra_compiler_option(-Wno-psabi)
+  add_extra_compiler_options("-Wno-psabi")
+elseif((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6.0) AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.3) AND AARCH64)
+  # Here to disable warnings due to gcc bug introduced in gcc 7 on aarch64 (could be reproduced with
+  # ci/docker/ubuntu-26.04 on macOS M1 host).
+  # In file included from /usr/include/c++/15/bits/stl_algobase.h:64,
+  #                  from /usr/include/c++/15/bits/specfun.h:43,
+  #                  from /usr/include/c++/15/cmath:3913,
+  #                  from /home/vispci/visp-ws/visp/modules/core/src/math/misc/vpMath.cpp:40:
+  #  /usr/include/c++/15/bits/stl_pair.h: In instantiation of 'constexpr std::pair<typename std::__strip_reference_wrapper<typename std::decay<_Tp>::type>::__type, typename std::__strip_reference_wrapper<typename std::decay<_Tp2>::type>::__type> std::make_pair(_T1&&, _T2&&) [with _T1 = double; _T2 = double; typename __strip_reference_wrapper<typename decay<_Tp>::type>::__type = double; typename decay<_Tp>::type = double; typename __strip_reference_wrapper<typename decay<_Tp2>::type>::__type = double; typename decay<_Tp2>::type = double]':
+  #  /home/vispci/visp-ws/visp/modules/core/src/math/misc/vpMath.cpp:648:42:   required from here
+  #    648 |       lonlat_vec.push_back(std::make_pair(deg(lon), deg(lat)));
+  #        |                            ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+  #  /usr/include/c++/15/bits/stl_pair.h:1164:5: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  #  1164 |     make_pair(_T1&& __x, _T2&& __y)
+  #        |     ^~~~~~~~~
+  add_extra_compiler_options("-Wno-psabi")
 endif()
 
 if(USE_OPENMP)
-  add_extra_compiler_option("${OpenMP_CXX_FLAGS}")
+  add_extra_compiler_options("${OpenMP_CXX_FLAGS}")
 endif()
 
-if((VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_11) AND CXX11_CXX_FLAGS)
-  add_extra_compiler_option("${CXX11_CXX_FLAGS}")
+if(USE_THREADS OR USE_PTHREAD)
+  # Condider the case of Apriltags on Unix that needs pthread
+  if(THREADS_HAVE_PTHREAD_ARG)
+    add_extra_compiler_options("-pthread")
+  endif()
+endif()
+
+if((VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_98) AND CXX98_CXX_FLAGS)
+  add_extra_compiler_options("${CXX98_CXX_FLAGS}")
+elseif((VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_11) AND CXX11_CXX_FLAGS)
+  add_extra_compiler_options("${CXX11_CXX_FLAGS}")
 elseif((VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_14) AND CXX14_CXX_FLAGS)
-  add_extra_compiler_option("${CXX14_CXX_FLAGS}")
+  add_extra_compiler_options("${CXX14_CXX_FLAGS}")
 elseif((VISP_CXX_STANDARD EQUAL VISP_CXX_STANDARD_17) AND CXX17_CXX_FLAGS)
-  add_extra_compiler_option("${CXX17_CXX_FLAGS}")
+  add_extra_compiler_options("${CXX17_CXX_FLAGS}")
 endif()
 
 if(BUILD_COVERAGE)
-  add_extra_compiler_option("-ftest-coverage -fprofile-arcs")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} gcov)
+    add_extra_compiler_options("-ftest-coverage -fprofile-arcs -lgcov")
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Clang or AppleClang (see CMP0025)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
+    add_extra_compiler_options("--coverage")
+  endif()
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-  add_extra_compiler_option(-fvisibility=hidden)
+  # Don't use -fvisibility=hidden with clang-cl
+  # clang-cl : warning : unknown argument ignored in clang-cl: '-fvisibility=hidden' [-Wunknown-argument]
+  if(NOT (MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    add_extra_compiler_options("-fvisibility=hidden")
+    add_extra_compiler_options("-fvisibility-inlines-hidden")
+  endif()
 
   if(ENABLE_AVX AND X86_64)
-    add_extra_compiler_option(-mavx)
+    add_extra_compiler_options("-mavx")
   else()
     if(ENABLE_SSE2)
-      add_extra_compiler_option(-msse2)
+      add_extra_compiler_options("-msse2")
     elseif(X86 OR X86_64)
-      add_extra_compiler_option(-mno-sse2)
+      add_extra_compiler_options("-mno-sse2")
     endif()
 
     if(ENABLE_SSE3)
-      add_extra_compiler_option(-msse3)
+      add_extra_compiler_options("-msse3")
     elseif(X86 OR X86_64)
-      #add_extra_compiler_option(-mno-sse3)
+      #add_extra_compiler_options("-mno-sse3")
     endif()
 
     if(ENABLE_SSSE3)
-      add_extra_compiler_option(-mssse3)
+      add_extra_compiler_options("-mssse3")
     elseif(X86 OR X86_64)
-      add_extra_compiler_option(-mno-ssse3)
+      add_extra_compiler_options("-mno-ssse3")
     endif()
   endif()
 
   if(X86 AND NOT IOS)
-    add_extra_compiler_option(-ffloat-store) #to not use the x87 FPU on x86, see PR #442 for more information
+    add_extra_compiler_options("-ffloat-store") #to not use the x87 FPU on x86, see PR #442 for more information
   endif()
 endif()
 
 if(MSVC AND X86_64)
   if(ENABLE_AVX AND NOT MSVC_VERSION LESS 1600)
-    add_extra_compiler_option("/arch:AVX")
+    add_extra_compiler_options("/arch:AVX")
   endif()
+endif()
+
+if(USE_PCL AND PCL_DEPS_COMPILE_OPTIONS)
+  add_extra_compiler_options("${PCL_DEPS_COMPILE_OPTIONS}")
 endif()
 
 if(UNIX)
   if(CMAKE_COMPILER_IS_GNUCXX)
-    add_extra_compiler_option(-fPIC) # Is needed for ANDROID too.
+    add_extra_compiler_options("-fPIC") # Is needed for ANDROID too.
   endif()
 endif()
 
 if(DEFINED WINRT_8_1)
-  add_extra_compiler_option(/ZW) # do not use with 8.0
+  add_extra_compiler_options("/ZW") # do not use with 8.0
 endif()
 
 if(MSVC)
@@ -181,9 +244,28 @@ if(MSVC)
   endif()
 endif()
 
+# adjust -Wl,-rpath-link
+if(CMAKE_SKIP_RPATH)
+  if((NOT CMAKE_CROSSCOMPILING OR VISP_ENABLE_LINKER_RPATH_LINK_ORIGIN) AND NOT VISP_SKIP_LINKER_RPATH_LINK_ORIGIN)
+    if(DEFINED CMAKE_SHARED_LIBRARY_RPATH_ORIGIN_TOKEN)
+      list(APPEND CMAKE_PLATFORM_RUNTIME_PATH "${CMAKE_SHARED_LIBRARY_RPATH_ORIGIN_TOKEN}")
+    else()
+      list(APPEND CMAKE_PLATFORM_RUNTIME_PATH "\$ORIGIN")
+    endif()
+  elseif(NOT VISP_SKIP_LINKER_RPATH_LINK_BINARY_LIB)
+    list(APPEND CMAKE_PLATFORM_RUNTIME_PATH "${LIBRARY_OUTPUT_PATH}")
+  endif()
+endif()
+if(VISP_EXTRA_RPATH_LINK_PATH)
+  string(REPLACE ":" ";" VIPS_EXTRA_RPATH_LINK_PATH_ "${VISP_EXTRA_RPATH_LINK_PATH}")
+  list(APPEND CMAKE_PLATFORM_RUNTIME_PATH ${VISP_EXTRA_RPATH_LINK_PATH_})
+  if(NOT CMAKE_EXECUTABLE_RPATH_LINK_CXX_FLAG)
+    message(WARNING "VISP_EXTRA_RPATH_LINK_PATH may not work properly because CMAKE_EXECUTABLE_RPATH_LINK_CXX_FLAG is not defined (not supported)")
+  endif()
+endif()
+
 # Add user supplied extra options (optimization, etc...)
 vp_list_unique(VISP_EXTRA_C_FLAGS)
-
 vp_list_unique(VISP_EXTRA_CXX_FLAGS)
 vp_list_remove_separator(VISP_EXTRA_C_FLAGS)
 vp_list_remove_separator(VISP_EXTRA_CXX_FLAGS)

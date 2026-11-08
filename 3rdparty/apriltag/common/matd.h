@@ -32,7 +32,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <string.h>
 
 #ifdef __cplusplus
-//extern "C" {
+extern "C" {
 #endif
 
 /**
@@ -45,7 +45,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 typedef struct
 {
     unsigned int nrows, ncols;
-//    double data[];
     double *data;
 } matd_t;
 
@@ -113,13 +112,13 @@ matd_t *matd_create_scalar(double v);
  * Retrieves the cell value for matrix 'm' at the given zero-based row and column index.
  * Performs more thorough validation checking than MATD_EL().
  */
-double matd_get(const matd_t *m, int row, int col);
+double matd_get(const matd_t *m, unsigned int row, unsigned int col);
 
 /**
  * Assigns the given value to the matrix cell at the given zero-based row and
  * column index. Performs more thorough validation checking than MATD_EL().
  */
-void matd_put(matd_t *m, int row, int col, double value);
+void matd_put(matd_t *m, unsigned int row, unsigned int col, double value);
 
 /**
  * Retrieves the scalar value of the given element ('m' must be a scalar).
@@ -147,7 +146,7 @@ matd_t *matd_copy(const matd_t *m);
  * beyond the number of rows/columns of 'a'. It is the caller's  responsibility to
  * call matd_destroy() on the returned matrix.
  */
-matd_t *matd_select(const matd_t *a, int r0, int r1, int c0, int c1);
+matd_t *matd_select(const matd_t *a, unsigned int r0, int r1, unsigned int c0, int c1);
 
 /**
  * Prints the supplied matrix 'm' to standard output by applying the supplied
@@ -442,5 +441,5 @@ void matd_utriangle_solve(matd_t *u, const double *b, double *x);
 double matd_max(matd_t *m);
 
 #ifdef __cplusplus
-//}
+}
 #endif

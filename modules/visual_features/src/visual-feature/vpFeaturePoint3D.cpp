@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2026 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,22 +29,14 @@
  *
  * Description:
  * 3D point visual feature.
- *
- * Authors:
- * Eric Marchand
- * Fabien Spindler
- *
- *****************************************************************************/
+ */
 
+#include <visp3/core/vpDebug.h>
+#include <visp3/core/vpException.h>
+#include <visp3/core/vpFeatureDisplay.h>
 #include <visp3/visual_features/vpBasicFeature.h>
 #include <visp3/visual_features/vpFeaturePoint3D.h>
-
-// Exception
-#include <visp3/core/vpException.h>
 #include <visp3/visual_features/vpFeatureException.h>
-
-// Debug trace
-#include <visp3/core/vpDebug.h>
 
 /*
 
@@ -54,6 +45,7 @@
 
 */
 
+BEGIN_VISP_NAMESPACE
 /*!
 
   Initialise the memory space requested for a 3D point visual
@@ -69,10 +61,12 @@ void vpFeaturePoint3D::init()
 
   // memory allocation
   s.resize(dim_s);
-  if (flags == NULL)
+  if (flags == nullptr) {
     flags = new bool[nbParameters];
-  for (unsigned int i = 0; i < nbParameters; i++)
+  }
+  for (unsigned int i = 0; i < nbParameters; ++i) {
     flags[i] = false;
+  }
 
   // default value XYZ
   s[0] = 0;
@@ -86,16 +80,17 @@ void vpFeaturePoint3D::init()
   initialize it to \f${\bf X} = (0, 0, 1)\f$.
 
 */
-vpFeaturePoint3D::vpFeaturePoint3D() { init(); }
+vpFeaturePoint3D::vpFeaturePoint3D()
+{
+  init();
+}
 
 /*!
-
   Initialise the \f$X\f$ coordinate in the camera frame of the 3D Point
   visual feature \f${\bf X} = (X,Y,Z)\f$.
 
   \param X : \f$X\f$ coordinate of the visual feature.
   \sa get_X()
-
 */
 void vpFeaturePoint3D::set_X(double X)
 {
@@ -104,13 +99,11 @@ void vpFeaturePoint3D::set_X(double X)
 }
 
 /*!
-
   Initialise the \f$Y\f$ coordinate in the camera frame of the 3D Point
   visual feature \f${\bf X} = (X,Y,Z)\f$.
 
   \param Y : \f$Y\f$ coordinate of the visual feature.
   \sa get_Y()
-
 */
 void vpFeaturePoint3D::set_Y(double Y)
 {
@@ -119,13 +112,11 @@ void vpFeaturePoint3D::set_Y(double Y)
 }
 
 /*!
-
   Initialise the \f$Z\f$ coordinate in the camera frame of the 3D Point
   visual feature \f${\bf X} = (X,Y,Z)\f$.
 
   \param Z : \f$Z\f$ coordinate or depth of the visual feature.
   \sa get_Z()
-
 */
 void vpFeaturePoint3D::set_Z(double Z)
 {
@@ -136,8 +127,9 @@ void vpFeaturePoint3D::set_Z(double Z)
 /*!
   Initialize the 3D point coordinates.
 
-  \param X,Y,Z : \f$(X,Y,Z)\f$ coordinates in the camera frame of the
-  3D point visual feature.
+  \param X : \f$ X \f$ coordinate in the camera frame of the 3D point visual feature.
+  \param Y : \f$ Y \f$ coordinate in the camera frame of the 3D point visual feature.
+  \param Z : \f$ Z \f$ coordinate in the camera frame of the 3D point visual feature.
 
   \sa set_X(), set_Y(), set_Z()
 */
@@ -147,18 +139,28 @@ void vpFeaturePoint3D::set_XYZ(double X, double Y, double Z)
   set_Y(Y);
   set_Z(Z);
 
-  for (unsigned int i = 0; i < nbParameters; i++)
+  for (unsigned int i = 0; i < nbParameters; ++i) {
     flags[i] = true;
+  }
 }
 
 //! Return the \f$X\f$ coordinate in the camera frame of the 3D point.
-double vpFeaturePoint3D::get_X() const { return s[0]; }
+double vpFeaturePoint3D::get_X() const
+{
+  return s[0];
+}
 
 //! Return the \f$Y\f$ coordinate in the camera frame of the 3D point.
-double vpFeaturePoint3D::get_Y() const { return s[1]; }
+double vpFeaturePoint3D::get_Y() const
+{
+  return s[1];
+}
 
 //! Return the \f$Z\f$ coordinate in the camera frame of the 3D point.
-double vpFeaturePoint3D::get_Z() const { return s[2]; }
+double vpFeaturePoint3D::get_Z() const
+{
+  return s[2];
+}
 
 /*!
   Compute and return the interaction matrix \f$ L \f$ associated to a subset
@@ -174,7 +176,6 @@ double vpFeaturePoint3D::get_Z() const { return s[2]; }
   \end{array}
   \right]
   \f]
-
 
   \param select : Selection of a subset of the possible 3D point coordinate
   features.
@@ -225,7 +226,6 @@ double vpFeaturePoint3D::get_Z() const { return s[2]; }
 
   In that case, L_XYZ is a 3 by 6 interaction matrix where the last
   line corresponds to the \f$ Z \f$ visual feature.
-
 */
 vpMatrix vpFeaturePoint3D::interaction(unsigned int select)
 {
@@ -234,20 +234,17 @@ vpMatrix vpFeaturePoint3D::interaction(unsigned int select)
   L.resize(0, 6);
 
   if (deallocate == vpBasicFeature::user) {
-    for (unsigned int i = 0; i < nbParameters; i++) {
+    for (unsigned int i = 0; i < nbParameters; ++i) {
       if (flags[i] == false) {
         switch (i) {
         case 0:
-          vpTRACE("Warning !!!  The interaction matrix is computed but X was "
-                  "not set yet");
+          vpTRACE("Warning !!! The interaction matrix is computed but X was not set yet");
           break;
         case 1:
-          vpTRACE("Warning !!!  The interaction matrix is computed but Y was "
-                  "not set yet");
+          vpTRACE("Warning !!! The interaction matrix is computed but Y was not set yet");
           break;
         case 2:
-          vpTRACE("Warning !!!  The interaction matrix is computed but Z was "
-                  "not set yet");
+          vpTRACE("Warning !!! The interaction matrix is computed but Z was not set yet");
           break;
         default:
           vpTRACE("Problem during the reading of the variable flags");
@@ -353,40 +350,34 @@ vpMatrix vpFeaturePoint3D::interaction(unsigned int select)
   vpColVector e = s.error(s_star, vpFeaturePoint3D::selectY() |
   vpFeaturePoint3D::selectZ());
   \endcode
-
 */
 vpColVector vpFeaturePoint3D::error(const vpBasicFeature &s_star, unsigned int select)
 {
   vpColVector e(0);
 
-  try {
-    if (vpFeaturePoint3D::selectX() & select) {
-      vpColVector ex(1);
-      ex[0] = s[0] - s_star[0];
+  if (vpFeaturePoint3D::selectX() & select) {
+    vpColVector ex(1);
+    ex[0] = s[0] - s_star[0];
 
-      e = vpColVector::stack(e, ex);
-    }
+    e = vpColVector::stack(e, ex);
+  }
 
-    if (vpFeaturePoint3D::selectY() & select) {
-      vpColVector ey(1);
-      ey[0] = s[1] - s_star[1];
-      e = vpColVector::stack(e, ey);
-    }
+  if (vpFeaturePoint3D::selectY() & select) {
+    vpColVector ey(1);
+    ey[0] = s[1] - s_star[1];
+    e = vpColVector::stack(e, ey);
+  }
 
-    if (vpFeaturePoint3D::selectZ() & select) {
-      vpColVector ez(1);
-      ez[0] = s[2] - s_star[2];
-      e = vpColVector::stack(e, ez);
-    }
-  } catch (...) {
-    throw;
+  if (vpFeaturePoint3D::selectZ() & select) {
+    vpColVector ez(1);
+    ez[0] = s[2] - s_star[2];
+    e = vpColVector::stack(e, ez);
   }
 
   return e;
 }
 
 /*!
-
   Build a 3D point visual feature from the camera frame coordinates
   \f$(X,Y,Z)\f$ of a point.
 
@@ -401,9 +392,8 @@ vpColVector vpFeaturePoint3D::error(const vpBasicFeature &s_star, unsigned int s
   (\f$Z\f$ coordinate) is null. That means that the 3D point is
   on the camera which is not possible.
 */
-void vpFeaturePoint3D::buildFrom(const vpPoint &p)
+vpFeaturePoint3D &vpFeaturePoint3D::buildFrom(const vpPoint &p)
 {
-
   // cP is expressed in homogeneous coordinates
   // we devide by the fourth coordinate
   s[0] = p.cP[0] / p.cP[3];
@@ -412,29 +402,33 @@ void vpFeaturePoint3D::buildFrom(const vpPoint &p)
 
   double Z = s[2];
   if (Z < 0) {
-    vpERROR_TRACE("Point is behind the camera ");
+    vpERROR_TRACE("Point is behind the camera");
     std::cout << "Z = " << Z << std::endl;
 
     throw(vpFeatureException(vpFeatureException::badInitializationError, "Point is behind the camera "));
   }
 
   if (fabs(Z) < 1e-6) {
-    vpERROR_TRACE("Point Z coordinates is null ");
+    vpERROR_TRACE("Point Z coordinates is null");
     std::cout << "Z = " << Z << std::endl;
 
     throw(vpFeatureException(vpFeatureException::badInitializationError, "Point Z coordinates is null"));
   }
 
-  for (unsigned int i = 0; i < nbParameters; i++)
+  for (unsigned int i = 0; i < nbParameters; ++i) {
     flags[i] = true;
+  }
+  return *this;
 }
 
 /*!
 
   Build a 3D point visual feature from the camera frame coordinates
-  \f$(X,Y,Z)\f$ of a point.
+  \f$ (X,Y,Z) \f$ of a point.
 
-  \param X,Y,Z : Camera frame coordinates \f$(X,Y,Z)\f$ of a 3D point.
+  \param X : \f$ X \f$ coordinate of a 3D point in the camera frame.
+  \param Y : \f$ Y \f$ coordinate of a 3D point in the camera frame.
+  \param Z : \f$ Z \f$ coordinate of a 3D point in the camera frame.
 
   \exception vpFeatureException::badInitializationError: If the depth
   (\f$Z\f$ coordinate) is negative. That means that the 3D point is
@@ -445,29 +439,30 @@ void vpFeaturePoint3D::buildFrom(const vpPoint &p)
   on the camera which is not possible.
 
 */
-void vpFeaturePoint3D::buildFrom(double X, double Y, double Z)
+vpFeaturePoint3D &vpFeaturePoint3D::buildFrom(const double &X, const double &Y, const double &Z)
 {
-
   s[0] = X;
   s[1] = Y;
   s[2] = Z;
 
   if (Z < 0) {
-    vpERROR_TRACE("Point is behind the camera ");
+    vpERROR_TRACE("Point is behind the camera");
     std::cout << "Z = " << Z << std::endl;
 
     throw(vpFeatureException(vpFeatureException::badInitializationError, "Point is behind the camera "));
   }
 
   if (fabs(Z) < 1e-6) {
-    vpERROR_TRACE("Point Z coordinates is null ");
+    vpERROR_TRACE("Point Z coordinates is null");
     std::cout << "Z = " << Z << std::endl;
 
     throw(vpFeatureException(vpFeatureException::badInitializationError, "Point Z coordinates is null"));
   }
 
-  for (unsigned int i = 0; i < nbParameters; i++)
+  for (unsigned int i = 0; i < nbParameters; ++i) {
     flags[i] = true;
+  }
+  return *this;
 }
 
 /*!
@@ -497,17 +492,19 @@ void vpFeaturePoint3D::print(unsigned int select) const
 {
 
   std::cout << "Point3D:  ";
-  if (vpFeaturePoint3D::selectX() & select)
+  if (vpFeaturePoint3D::selectX() & select) {
     std::cout << " X=" << get_X();
-  if (vpFeaturePoint3D::selectY() & select)
+  }
+  if (vpFeaturePoint3D::selectY() & select) {
     std::cout << " Y=" << get_Y();
-  if (vpFeaturePoint3D::selectZ() & select)
+  }
+  if (vpFeaturePoint3D::selectZ() & select) {
     std::cout << " Z=" << get_Z();
+  }
   std::cout << std::endl;
 }
 
 /*!
-
   Create an object with the same type.
 
   \code
@@ -515,7 +512,6 @@ void vpFeaturePoint3D::print(unsigned int select) const
   vpFeaturePoint3D s;
   s_star = s.duplicate(); // s_star is now a vpFeaturePoint3D
   \endcode
-
 */
 vpFeaturePoint3D *vpFeaturePoint3D::duplicate() const
 {
@@ -524,40 +520,48 @@ vpFeaturePoint3D *vpFeaturePoint3D::duplicate() const
 }
 
 /*!
-
-  Not implemented.
-*/
-void vpFeaturePoint3D::display(const vpCameraParameters & /*cam*/, const vpImage<unsigned char> & /* I */,
-                               const vpColor & /* color */, unsigned int /* thickness */) const
-{
-  static int firsttime = 0;
-
-  if (firsttime == 0) {
-    firsttime = 1;
-    vpERROR_TRACE("not implemented");
-    // Do not throw and error since it is not subject
-    // to produce a failure
-  }
-}
-
-/*!
-
-  Not implemented.
+ * Display the 3D point visual feature on an image.
+ *
+ * This method projects the 3D point onto the image plane using the provided camera
+ * parameters and draws it with the specified color and line thickness.
+ *
+ * \param[in] cam Camera parameters used for perspective projection.
+ * \param[in,out] I Gray level image on which the feature will be displayed.
+ * \param[in] color Color of the displayed point (default colors can be used like vpColor::red).
+ * \param[in] thickness Thickness of the drawing lines (in pixels).
+ *
+ * \sa vpFeatureDisplay::displayPoint()
  */
-void vpFeaturePoint3D::display(const vpCameraParameters & /*cam*/, const vpImage<vpRGBa> & /* I */,
-                               const vpColor & /* color */, unsigned int /* thickness */) const
+void vpFeaturePoint3D::display(const vpCameraParameters &cam, const vpImage<unsigned char> &I,
+                               const vpColor &color, unsigned int thickness) const
 {
-  static int firsttime = 0;
-
-  if (firsttime == 0) {
-    firsttime = 1;
-    vpERROR_TRACE("not implemented");
-    // Do not throw and error since it is not subject
-    // to produce a failure
-  }
+  double x = get_X() / get_Z();
+  double y = get_Y() / get_Z();
+  vpFeatureDisplay::displayPoint(x, y, cam, I, color, thickness);
 }
-/*!
 
+/*!
+ * Display the 3D point visual feature on an image.
+ *
+ * This method projects the 3D point onto the image plane using the provided camera
+ * parameters and draws it with the specified color and line thickness.
+ *
+ * \param[in] cam Camera parameters used for perspective projection.
+ * \param[in,out] I Color image on which the feature will be displayed.
+ * \param[in] color Color of the displayed point (default colors can be used like vpColor::red).
+ * \param[in] thickness Thickness of the drawing lines (in pixels).
+ *
+ * \sa vpFeatureDisplay::displayPoint()
+ */
+void vpFeaturePoint3D::display(const vpCameraParameters &cam, const vpImage<vpRGBa> &I,
+                               const vpColor &color, unsigned int thickness) const
+{
+  double x = get_X() / get_Z();
+  double y = get_Y() / get_Z();
+  vpFeatureDisplay::displayPoint(x, y, cam, I, color, thickness);
+}
+
+/*!
   Function used to select the \f$ X\f$ subset coordinate of the 3D point
   visual feature.
 
@@ -579,12 +583,13 @@ void vpFeaturePoint3D::display(const vpCameraParameters & /*cam*/, const vpImage
   \endcode
 
   \sa selectY(), selectZ()
-
 */
-unsigned int vpFeaturePoint3D::selectX() { return FEATURE_LINE[0]; }
+unsigned int vpFeaturePoint3D::selectX()
+{
+  return FEATURE_LINE[0];
+}
 
 /*!
-
   Function used to select the \f$ Y\f$ subset coordinate of the 3D point
   visual feature.
 
@@ -606,12 +611,13 @@ unsigned int vpFeaturePoint3D::selectX() { return FEATURE_LINE[0]; }
   \endcode
 
   \sa selectX(), selectZ()
-
 */
-unsigned int vpFeaturePoint3D::selectY() { return FEATURE_LINE[1]; }
+unsigned int vpFeaturePoint3D::selectY()
+{
+  return FEATURE_LINE[1];
+}
 
 /*!
-
   Function used to select the \f$ Z\f$ subset coordinate of the 3D point
   visual feature.
 
@@ -632,6 +638,10 @@ unsigned int vpFeaturePoint3D::selectY() { return FEATURE_LINE[1]; }
   \endcode
 
   \sa selectX(), selectY()
-
 */
-unsigned int vpFeaturePoint3D::selectZ() { return FEATURE_LINE[2]; }
+unsigned int vpFeaturePoint3D::selectZ()
+{
+  return FEATURE_LINE[2];
+}
+
+END_VISP_NAMESPACE

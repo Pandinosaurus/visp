@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2025 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,15 +29,12 @@
  *
  * Description:
  * Color definition.
- *
- * Authors:
- * Nicolas Melchior
- * Fabien Spindler
- *
- *****************************************************************************/
+ */
 
 #include <visp3/core/vpColor.h>
+#include <visp3/core/vpIoTools.h>
 
+BEGIN_VISP_NAMESPACE
 // FS: Sould be improved to avoid the #if preprocessor line. Not a good idea
 // to define colors in static.
 //     See also vpColor.h where things need to be improved.
@@ -102,7 +98,7 @@ vpColor const vpColor::none = vpColor(0, 0, 0, id_unknown);
 const unsigned int vpColor::nbColors = 18;
 
 /*!< Array of available colors. */
-vpColor const vpColor::allColors[vpColor::nbColors] = {vpColor::blue,       // 12
+vpColor const vpColor::allColors[vpColor::nbColors] = { vpColor::blue,       // 12
                                                        vpColor::green,      // 9
                                                        vpColor::red,        // 6
                                                        vpColor::cyan,       // 15
@@ -119,17 +115,109 @@ vpColor const vpColor::allColors[vpColor::nbColors] = {vpColor::blue,       // 1
                                                        vpColor::gray,       // 3
                                                        vpColor::darkGray,   // 4
                                                        vpColor::black,      // 0
-                                                       vpColor::white};     // 17
+                                                       vpColor::white };     // 17
 #endif
 
-vpColor colors[6] = {vpColor::blue, vpColor::green, vpColor::red, vpColor::cyan, vpColor::orange, vpColor::purple};
+std::string vpColor::colorToString(const vpColor &color)
+{
+  std::string name;
+  switch (color.id) {
+  case id_black:
+    name = "black";
+    break;
+  case id_white:
+    name = "white";
+    break;
+  case id_lightGray:
+    name = "light-gray";
+    break;
+  case id_gray:
+    name = "gray";
+    break;
+  case id_darkGray:
+    name = "dark-gray";
+    break;
+  case id_lightRed:
+    name = "light-red";
+    break;
+  case id_red:
+    name = "red";
+    break;
+  case id_darkRed:
+    name = "dark-red";
+    break;
+  case id_lightGreen:
+    name = "light-green";
+    break;
+  case id_green:
+    name = "green";
+    break;
+  case id_darkGreen:
+    name = "dark-green";
+    break;
+  case id_lightBlue:
+    name = "light-blue";
+    break;
+  case id_blue:
+    name = "blue";
+    break;
+  case id_darkBlue:
+    name = "dark-blue";
+    break;
+  case id_yellow:
+    name = "yellow";
+    break;
+  case id_cyan:
+    name = "cyan";
+    break;
+  case id_orange:
+    name = "orange";
+    break;
+  case id_purple:
+    name = "purple";
+    break;
+  case id_unknown:
+  default:
+    name = "user-defined";
+    break;
+  }
+
+  return name;
+}
+
+vpColor vpColor::colorFromString(const std::string &name)
+{
+  vpColor color = vpColor::none;
+  bool notFound = true;
+  unsigned int i = 0;
+  while ((i < vpColor::nbColors) && notFound) {
+    vpColor candidate = vpColor::allColors[i];
+    if (vpIoTools::toLowerCase(name) == colorToString(candidate)) {
+      color = candidate;
+      notFound = false;
+    }
+    ++i;
+  }
+  return color;
+}
+
+std::string vpColor::getColorsNames(const std::string &prefix, const std::string &sep, const std::string &suffix)
+{
+  std::string list = prefix;
+  for (unsigned int i = 0; i < vpColor::nbColors - 1; ++i) {
+    list += colorToString(vpColor::allColors[i]) + sep;
+  }
+  list += colorToString(vpColor::allColors[vpColor::nbColors - 1]) + suffix;
+  return list;
+}
 
 /*!
   Compare two colors.
 
   Return true if the R,G,B components are the same.
 
-  \param c1,c2 : Color to compare.
+  \param c1 : First color to compare.
+  \param c2 : Second color to compare.
 */
 VISP_EXPORT bool operator==(const vpColor &c1, const vpColor &c2)
 {
@@ -142,9 +230,12 @@ VISP_EXPORT bool operator==(const vpColor &c1, const vpColor &c2)
 
   Return true if the R,G,B components are different.
 
-  \param c1,c2 : Color to compare.
+  \param c1 : First color to compare.
+  \param c2 : Second color to compare.
 */
 VISP_EXPORT bool operator!=(const vpColor &c1, const vpColor &c2)
 {
   return ((c1.R != c2.R) || (c1.G != c2.G) || (c1.B == c2.B));
 }
+
+END_VISP_NAMESPACE

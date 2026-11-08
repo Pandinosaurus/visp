@@ -1,7 +1,5 @@
-# Resources required by the sample browser and most samples.
-[Essential]
-#Zip=@OGRE_MEDIA_DIR@/packs/SdkTrays.zip
+# Ogre resources
 
-# Resource locations to be added to the default path
-[General]
-@OGRE_RESOURCES_FileSystem@
+@OGRE_RESOURCE_LINES@
+@OGRE_RESOURCE_LINES_BUILD@
+@OGRE_RESOURCE_LINES_INSTALL@

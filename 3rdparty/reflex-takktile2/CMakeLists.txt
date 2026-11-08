@@ -41,3 +41,11 @@ if(NOT BUILD_SHARED_LIBS)
   vp_install_target(${TAKKTILE2_LIBRARY} EXPORT VISPModules ARCHIVE DESTINATION ${VISP_3P_LIB_INSTALL_PATH} COMPONENT dev)
 endif()
 
+if(UNIX)
+  vp_set_source_file_compile_flag(reflex_driver2.cpp -Wno-format)
+endif()
+
+set_target_properties(${TAKKTILE2_LIBRARY} PROPERTIES
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN ON
+)

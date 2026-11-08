@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2021 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2024 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,8 +29,7 @@
  *
  * Description:
  * IMU data acquisition with Structure Core sensor and libStructure.
- *
- *****************************************************************************/
+ */
 
 /*!
   \example testOccipitalStructure_Core_imu.cpp
@@ -41,13 +39,18 @@
 
 #include <iostream>
 
-#include <visp3/gui/vpPlot.h>
-#include <visp3/sensor/vpOccipitalStructure.h>
+#include <visp3/core/vpConfig.h>
 
 #if defined(VISP_HAVE_OCCIPITAL_STRUCTURE) && (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
 
+#include <visp3/gui/vpPlot.h>
+#include <visp3/sensor/vpOccipitalStructure.h>
+
 int main()
 {
+#ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+#endif
   try {
     double initial_ts, ts;
     vpOccipitalStructure sc;
@@ -66,8 +69,8 @@ int main()
     // Create plotters
     vpPlot acceleration_plotter(1, 400, 800, 10, 10, "Accelerations");
     vpPlot rotationRate_plotter(1, 400, 800, 10, 450, "Rotation rates");
-    acceleration_plotter.initGraph(0,3);
-    rotationRate_plotter.initGraph(0,3);
+    acceleration_plotter.initGraph(0, 3);
+    rotationRate_plotter.initGraph(0, 3);
 
     acceleration_plotter.setColor(0, 0, vpColor::blue);
     acceleration_plotter.setColor(0, 1, vpColor::red);
@@ -102,10 +105,11 @@ int main()
         quit = true;
       }
     }
-
-  } catch (const vpException &e) {
+  }
+  catch (const vpException &e) {
     std::cerr << "Structure SDK error " << e.what() << std::endl;
-  } catch (const std::exception &e) {
+  }
+  catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
   }
 
@@ -114,12 +118,12 @@ int main()
 #else
 int main()
 {
-#if !defined(VISP_HAVE_OCCIPITAL_STRUCTURE)
+#if !defined( VISP_HAVE_OCCIPITAL_STRUCTURE )
   std::cout << "You do not have Occipital Structure SDK functionality enabled..." << std::endl;
   std::cout << "Tip:" << std::endl;
   std::cout << "- Install libStructure, configure again ViSP using cmake and build again this example" << std::endl;
   return EXIT_SUCCESS;
-#elif (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+#elif ( VISP_CXX_STANDARD < VISP_CXX_STANDARD_11 )
   std::cout << "You do not build ViSP with c++11 or higher compiler flag" << std::endl;
   std::cout << "Tip:" << std::endl;
   std::cout << "- Configure ViSP again using cmake -DUSE_CXX_STANDARD=11, and build again this example" << std::endl;

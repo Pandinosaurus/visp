@@ -37,7 +37,7 @@ if(NOT BUILD_SHARED_LIBS)
   vp_install_target(${LAPACK_LIBRARY} EXPORT VISPModules ARCHIVE DESTINATION ${VISP_3P_LIB_INSTALL_PATH} COMPONENT dev)
 endif()
 
-if(MSVC)
+if(MSVC AND NOT ((CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang")))
   # Disable Visual C++ warnings
   foreach(f ${lib_srcs})
     vp_set_source_file_compile_flag(${f} /wd4244 /wd4267 /wd4273 /wd4554 /wd4723 /wd4996)
@@ -47,3 +47,9 @@ else()
     vp_set_source_file_compile_flag(${f} -Wno-logical-op-parentheses -Wno-shift-op-parentheses -Wno-parentheses -Wno-format-extra-args -Wno-format -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable)
   endforeach()
 endif()
+
+set_target_properties(${LAPACK_LIBRARY} PROPERTIES
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN ON
+  C_VISIBILITY_PRESET hidden
+)

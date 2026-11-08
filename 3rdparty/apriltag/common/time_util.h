@@ -25,30 +25,28 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#ifndef _TIME_UTIL_H
-#define _TIME_UTIL_H
+#pragma once
 
-//#include <stdbool.h>
+#include <stdbool.h>
 #include <stdint.h>
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#include "sys/times.h"
-#include "time.h"
-#else
-#include <sys/time.h>
 #include <time.h>
+
+#ifdef _WIN32
+#if defined __has_include && __has_include ("winsock2.h")
+#include <winsock2.h>
+#else
+#include <Winsock2.h>
 #endif
-#if defined(__MINGW32__) // to define struct timespec
-#include <pthread.h>
+typedef long long suseconds_t;
 #endif
 
-#ifdef _MSC_VER
-#include <io.h>
-#else
+#ifndef _MSC_VER
+#include <sys/time.h>
 #include <unistd.h>
 #endif
 
 #ifdef __cplusplus
-//extern "C" {
+extern "C" {
 #endif
 
 typedef struct timeutil_rest timeutil_rest_t;
@@ -75,7 +73,5 @@ int64_t time_util_hhmmss_ss_to_utime(double time);
 int64_t timeutil_ms_to_us(int32_t ms);
 
 #ifdef __cplusplus
-//}
-#endif
-
+}
 #endif

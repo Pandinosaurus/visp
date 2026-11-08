@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2019 Yermalayeu Ihar.
+* Copyright (c) 2011-2022 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -28,31 +28,12 @@
 
 namespace Simd
 {
-#ifdef SIMD_SSE_ENABLE
-    namespace Sse
-    {
-        SIMD_INLINE float ExtractValue(__m128 a, int i)
-        {
-            float SIMD_ALIGNED(16) _a[4];
-            _mm_store_ps(_a, a);
-            return _a[i];
-        }
-
-        SIMD_INLINE float ExtractSum(__m128 a)
-        {
-            float SIMD_ALIGNED(16) _a[4];
-            _mm_store_ps(_a, a);
-            return _a[0] + _a[1] + _a[2] + _a[3];
-        }
-    }
-#endif//SIMD_SSE_ENABLE
-
-#ifdef SIMD_SSE2_ENABLE
-    namespace Sse2
+#ifdef SIMD_SSE41_ENABLE
+    namespace Sse41
     {
         template <int index> SIMD_INLINE int ExtractInt8(__m128i a)
         {
-            return _mm_extract_epi16(_mm_srli_si128(a, index & 0x1), index >> 1) & 0xFF;
+            return _mm_extract_epi8(a, index);
         }
 
         template <int index> SIMD_INLINE int ExtractInt16(__m128i a)
@@ -62,7 +43,7 @@ namespace Simd
 
         template <int index> SIMD_INLINE int ExtractInt32(__m128i a)
         {
-            return _mm_cvtsi128_si32(_mm_srli_si128(a, 4 * index));
+            return _mm_extract_epi32(a, index);
         }
 
         SIMD_INLINE int ExtractInt32Sum(__m128i a)
@@ -87,12 +68,7 @@ namespace Simd
             _mm_store_si128((__m128i*)_a, a);
             return _a[0] + _a[1];
         }
-    }
-#endif// SIMD_SSE2_ENABLE
 
-#ifdef SIMD_SSE3_ENABLE
-    namespace Sse3
-    {
         SIMD_INLINE float ExtractSum(__m128 a)
         {
             return _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(a, _mm_setzero_ps()), _mm_setzero_ps()));
@@ -103,7 +79,7 @@ namespace Simd
             return _mm_hadd_ps(_mm_hadd_ps(a[0], a[1]), _mm_hadd_ps(a[2], a[3]));
         }
     }
-#endif//SIMD_SSE3_ENABLE
+#endif//SIMD_SSE41_ENABLE
 
 #ifdef SIMD_AVX_ENABLE
     namespace Avx
@@ -197,6 +173,11 @@ namespace Simd
         SIMD_INLINE uint32_t ExtractSum32u(const uint32x4_t & a)
         {
             return vgetq_lane_u32(a, 0) + vgetq_lane_u32(a, 1) + vgetq_lane_u32(a, 2) + vgetq_lane_u32(a, 3);
+        }
+
+        SIMD_INLINE int32_t ExtractSum32s(const int32x4_t& a)
+        {
+            return vgetq_lane_s32(a, 0) + vgetq_lane_s32(a, 1) + vgetq_lane_s32(a, 2) + vgetq_lane_s32(a, 3);
         }
 
         SIMD_INLINE uint64_t ExtractSum64u(const uint64x2_t & a)

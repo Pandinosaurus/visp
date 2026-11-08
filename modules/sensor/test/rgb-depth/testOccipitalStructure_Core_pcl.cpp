@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2021 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2025 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,8 +29,7 @@
  *
  * Description:
  * Point cloud depth visualization with Occipital Structure Core sensor.
- *
- *****************************************************************************/
+ */
 
 /*!
   \example testOccipitalStructure_Core_pcl.cpp
@@ -41,21 +39,23 @@
 
 #include <iostream>
 
+#include <visp3/core/vpConfig.h>
+
+#if defined(VISP_HAVE_OCCIPITAL_STRUCTURE) && (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11) && (defined(VISP_HAVE_PCL)) && defined(VISP_HAVE_PCL_VISUALIZATION)
+
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
 #include <visp3/core/vpImageConvert.h>
 #include <visp3/gui/vpDisplayGDI.h>
 #include <visp3/gui/vpDisplayX.h>
 #include <visp3/sensor/vpOccipitalStructure.h>
 
-#ifdef VISP_HAVE_PCL
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#endif
-
-#if defined(VISP_HAVE_OCCIPITAL_STRUCTURE) && (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11) && \
-  (defined(VISP_HAVE_PCL))
-
 int main()
 {
+#ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+#endif
   try {
     unsigned int display_scale = 1;
     vpOccipitalStructure sc;
@@ -72,19 +72,21 @@ int main()
     sc.getCameraParameters(vpOccipitalStructure::depth);
 
 #if defined(VISP_HAVE_X11)
-    vpDisplayX display_visible;  // Visible image
+    vpDisplayX display_visible; // Visible image
 #elif defined(VISP_HAVE_GDI)
-    vpDisplayGDI display_visible;  // Visible image
+    vpDisplayGDI display_visible; // Visible image
 #endif
-    vpImage<vpRGBa> I_visible(sc.getHeight(vpOccipitalStructure::visible), sc.getWidth(vpOccipitalStructure::visible), 0);;
+    vpImage<vpRGBa> I_visible(sc.getHeight(vpOccipitalStructure::visible), sc.getWidth(vpOccipitalStructure::visible),
+                              vpRGBa(0));
+    ;
     display_visible.setDownScalingFactor(display_scale);
-    display_visible.init(I_visible, static_cast<int>(I_visible.getWidth()/display_scale) + 80, 10, "Color image");
+    display_visible.init(I_visible, static_cast<int>(I_visible.getWidth() / display_scale) + 80, 10, "Color image");
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    sc.acquire((unsigned char *)I_visible.bitmap, NULL, NULL, pointcloud);
+    sc.acquire((unsigned char *)I_visible.bitmap, nullptr, nullptr, pointcloud);
 
-    pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+    pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(pointcloud);
 
     viewer->setBackgroundColor(0, 0, 0);
@@ -95,31 +97,33 @@ int main()
       double t = vpTime::measureTimeMs();
 
       // Acquire depth as point cloud.
-      sc.acquire((unsigned char *)I_visible.bitmap, NULL, NULL, pointcloud);
+      sc.acquire((unsigned char *)I_visible.bitmap, nullptr, nullptr, pointcloud);
       vpDisplay::display(I_visible);
-      vpDisplay::displayText(I_visible, 15*display_scale, 15*display_scale, "Click to quit", vpColor::red);
+      vpDisplay::displayText(I_visible, 15 * display_scale, 15 * display_scale, "Click to quit", vpColor::red);
       vpDisplay::flush(I_visible);
 
-      if(vpDisplay::getClick(I_visible, false))
+      if (vpDisplay::getClick(I_visible, false))
         break;
 
       static bool update = false;
       if (!update) {
-        viewer->addPointCloud<pcl::PointXYZRGB> (pointcloud, rgb, "sample cloud");
-        viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+        viewer->addPointCloud<pcl::PointXYZRGB>(pointcloud, rgb, "sample cloud");
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         update = true;
-      } else {
-        viewer->updatePointCloud<pcl::PointXYZRGB> (pointcloud, rgb, "sample cloud");
+      }
+      else {
+        viewer->updatePointCloud<pcl::PointXYZRGB>(pointcloud, rgb, "sample cloud");
       }
 
       viewer->spinOnce(30);
 
       std::cout << "Loop time: " << vpTime::measureTimeMs() - t << std::endl;
     }
-
-  } catch (const vpException &e) {
+  }
+  catch (const vpException &e) {
     std::cerr << "Structure SDK error " << e.what() << std::endl;
-  } catch (const std::exception &e) {
+  }
+  catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
   }
 
@@ -128,17 +132,19 @@ int main()
 #else
 int main()
 {
-#if !defined(VISP_HAVE_OCCIPITAL_STRUCTURE)
+#if !defined( VISP_HAVE_OCCIPITAL_STRUCTURE )
   std::cout << "You do not have Occipital Structure SDK functionality enabled..." << std::endl;
   std::cout << "Tip:" << std::endl;
   std::cout << "- Install libStructure, configure again ViSP using cmake and build again this example" << std::endl;
   return EXIT_SUCCESS;
-#elif (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+#elif ( VISP_CXX_STANDARD < VISP_CXX_STANDARD_11 )
   std::cout << "You do not build ViSP with c++11 or higher compiler flag" << std::endl;
   std::cout << "Tip:" << std::endl;
   std::cout << "- Configure ViSP again using cmake -DUSE_CXX_STANDARD=11, and build again this example" << std::endl;
-#elif !defined(VISP_HAVE_PCL)
+#elif !defined( VISP_HAVE_PCL )
   std::cout << "You do not have PCL 3rd party installed." << std::endl;
+#elif !defined( VISP_HAVE_PCL_VISUALIZATION )
+  std::cout << "You do not have PCL visualization module." << std::endl;
 #endif
   return EXIT_SUCCESS;
 }

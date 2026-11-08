@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2026 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -32,11 +31,7 @@
  *   tests the control law
  *   eye-in-hand control
  *   velocity computed in the camera frame
- *
- * Authors:
- * Fabien Spindler
- *
- *****************************************************************************/
+ */
 /*!
   \example servoViper850FourPointsKinect.cpp
 
@@ -65,9 +60,7 @@
 #include <visp3/core/vpIoTools.h>
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpPoint.h>
-#include <visp3/gui/vpDisplayGTK.h>
-#include <visp3/gui/vpDisplayOpenCV.h>
-#include <visp3/gui/vpDisplayX.h>
+#include <visp3/gui/vpDisplayFactory.h>
 #include <visp3/robot/vpRobotViper850.h>
 #include <visp3/sensor/vp1394TwoGrabber.h>
 #include <visp3/sensor/vpKinect.h>
@@ -82,6 +75,10 @@
 
 #include <visp3/blob/vpDot2.h>
 #define L 0.05 // to deal with a 10cm by 10cm square
+
+#ifdef ENABLE_VISP_NAMESPACE
+using namespace VISP_NAMESPACE_NAME;
+#endif
 
 /*!
 
@@ -100,23 +97,16 @@
   \param cMo : Homogeneous matrix in output describing the transformation
   between the camera and object frame.
 
-  \param cto : Translation in ouput extracted from \e cMo.
-
-  \param cro : Rotation in ouput extracted from \e cMo.
-
   \param init : Indicates if the we have to estimate an initial pose with
   Lagrange or Dementhon methods.
 
 */
-void compute_pose(vpPoint point[], vpDot2 dot[], int ndot, vpCameraParameters cam, vpHomogeneousMatrix &cMo,
-                  vpTranslationVector &cto, vpRxyzVector &cro, bool init)
+void compute_pose(vpPoint point[], vpDot2 dot[], int ndot, vpCameraParameters cam, vpHomogeneousMatrix &cMo, bool init)
 {
-  vpHomogeneousMatrix cMo_dementhon; // computed pose with dementhon
-  vpHomogeneousMatrix cMo_lagrange;  // computed pose with dementhon
   vpRotationMatrix cRo;
   vpPose pose;
   vpImagePoint cog;
-  for (int i = 0; i < ndot; i++) {
+  for (int i = 0; i < ndot; ++i) {
 
     double x = 0, y = 0;
     cog = dot[i].getCog();
@@ -128,27 +118,11 @@ void compute_pose(vpPoint point[], vpDot2 dot[], int ndot, vpCameraParameters ca
   }
 
   if (init == true) {
-    pose.computePose(vpPose::DEMENTHON, cMo_dementhon);
-    // Compute and return the residual expressed in meter for the pose matrix
-    // 'cMo'
-    double residual_dementhon = pose.computeResidual(cMo_dementhon);
-    pose.computePose(vpPose::LAGRANGE, cMo_lagrange);
-    double residual_lagrange = pose.computeResidual(cMo_lagrange);
-
-    // Select the best pose to initialize the lowe pose computation
-    if (residual_lagrange < residual_dementhon)
-      cMo = cMo_lagrange;
-    else
-      cMo = cMo_dementhon;
-
-  } else { // init = false; use of the previous pose to initialise LOWE
-    cRo.buildFrom(cro);
-    cMo.buildFrom(cto, cRo);
+    pose.computePose(vpPose::DEMENTHON_LAGRANGE_VIRTUAL_VS, cMo);
   }
-  pose.computePose(vpPose::LOWE, cMo);
-  cMo.extract(cto);
-  cMo.extract(cRo);
-  cro.buildFrom(cRo);
+  else { // init = false; use of the previous pose to initialise VIRTUAL_VS
+    pose.computePose(vpPose::VIRTUAL_VS, cMo);
+  }
 }
 
 int main()
@@ -156,8 +130,8 @@ int main()
   // Log file creation in /tmp/$USERNAME/log.dat
   // This file contains by line:
   // - the 6 computed joint velocities (m/s, rad/s) to achieve the task
-  // - the 6 mesured joint velocities (m/s, rad/s)
-  // - the 6 mesured joint positions (m, rad)
+  // - the 6 measured joint velocities (m/s, rad/s)
+  // - the 6 measured joint positions (m, rad)
   // - the 8 values of s - s*
   std::string username;
   // Get the user login name
@@ -172,10 +146,11 @@ int main()
     try {
       // Create the dirname
       vpIoTools::makeDirectory(logdirname);
-    } catch (...) {
+    }
+    catch (...) {
       std::cerr << std::endl << "ERROR:" << std::endl;
       std::cerr << "  Cannot create " << logdirname << std::endl;
-      return (-1);
+      return EXIT_FAILURE;
     }
   }
   std::string logfilename;
@@ -183,6 +158,12 @@ int main()
 
   // Open the log file name
   std::ofstream flog(logfilename.c_str());
+
+#if (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
+  std::shared_ptr<vpDisplay> display;
+#else
+  vpDisplay *display = nullptr;
+#endif
 
   try {
     vpRobotViper850 robot;
@@ -195,7 +176,6 @@ int main()
 
     vpImage<unsigned char> I;
     vpImage<vpRGBa> Irgb;
-    int i;
 
 #ifdef VISP_HAVE_LIBFREENECT_OLD
     // This is the way to initialize Freenect with an old version of
@@ -211,12 +191,10 @@ int main()
     kinect.getRGB(Irgb);
     vpImageConvert::convert(Irgb, I);
 
-#ifdef VISP_HAVE_X11
-    vpDisplayX display(I, 100, 100, "Current image");
-#elif defined(VISP_HAVE_OPENCV)
-    vpDisplayOpenCV display(I, 100, 100, "Current image");
-#elif defined(VISP_HAVE_GTK)
-    vpDisplayGTK display(I, 100, 100, "Current image");
+#if (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
+    display = vpDisplayFactory::createDisplay(I, 100, 100, "Current image");
+#else
+    display = vpDisplayFactory::allocateDisplay(I, 100, 100, "Current image");
 #endif
 
     vpDisplay::display(I);
@@ -227,7 +205,7 @@ int main()
     std::cout << " Test program for vpServo " << std::endl;
     std::cout << " Eye-in-hand task control, velocity computed in the camera space" << std::endl;
     std::cout << " Use of the Viper850 robot " << std::endl;
-    std::cout << " task : servo 4 points on a square with dimention " << L << " meters" << std::endl;
+    std::cout << " task : servo 4 points on a square with dimension " << L << " meters" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << std::endl;
 
@@ -236,7 +214,7 @@ int main()
 
     std::cout << "Click on the 4 dots clockwise starting from upper/left dot..." << std::endl;
 
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; ++i) {
       dot[i].initTracking(I);
       cog = dot[i].getCog();
       vpDisplay::displayCross(I, cog, 10, vpColor::blue);
@@ -253,8 +231,9 @@ int main()
 
     // Sets the current position of the visual feature
     vpFeaturePoint p[4];
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; ++i) {
       vpFeatureBuilder::create(p[i], cam, dot[i]); // retrieve x,y  of the vpFeaturePoint structure
+    }
 
     // Set the position of the square target in a frame which origin is
     // centered in the middle of the square
@@ -274,19 +253,20 @@ int main()
     // Sets the desired position of the 2D visual feature
     vpFeaturePoint pd[4];
     // Compute the desired position of the features from the desired pose
-    for (int i = 0; i < 4; i++) {
-      vpColVector cP, p;
+    for (int i = 0; i < 4; ++i) {
+      vpColVector cP, pp;
       point[i].changeFrame(cMo, cP);
-      point[i].projection(cP, p);
+      point[i].projection(cP, pp);
 
-      pd[i].set_x(p[0]);
-      pd[i].set_y(p[1]);
+      pd[i].set_x(pp[0]);
+      pd[i].set_y(pp[1]);
       pd[i].set_Z(cP[2]);
     }
 
     // We want to see a point on a point
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; ++i) {
       task.addFeature(p[i], pd[i]);
+    }
 
     // Set the proportional gain
     task.setLambda(0.5);
@@ -305,6 +285,7 @@ int main()
     robot.setRobotState(vpRobot::STATE_VELOCITY_CONTROL);
 
     std::cout << "\nHit CTRL-C to stop the loop...\n" << std::flush;
+    bool init_pose_from_linear_method = true;
     for (;;) {
       // Acquire a new image from the kinect
       kinect.getRGB(Irgb);
@@ -315,7 +296,7 @@ int main()
 
       try {
         // For each point...
-        for (i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; ++i) {
           // Achieve the tracking of the dot in the image
           dot[i].track(I);
           // Display a green cross at the center of gravity position in the
@@ -323,20 +304,28 @@ int main()
           cog = dot[i].getCog();
           vpDisplay::displayCross(I, cog, 10, vpColor::green);
         }
-      } catch (...) {
+      }
+      catch (...) {
         flog.close(); // Close the log file
         vpTRACE("Error detected while tracking visual features");
         robot.stopMotion();
         kinect.stop();
-        return (1);
+#if (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+        if (display != nullptr) {
+          delete display;
+        }
+#endif
+        return EXIT_FAILURE;
       }
 
-      // During the servo, we compute the pose using LOWE method. For the
-      // initial pose used in the non linear minimisation we use the pose
-      // computed at the previous iteration.
-      compute_pose(point, dot, 4, cam, cMo, cto, cro, false);
-
-      for (i = 0; i < 4; i++) {
+      // At first iteration, we initialise non linear pose estimation with a linear approach.
+      // For the other iterations, non linear pose estimation is initialized with the pose estimated at previous
+      // iteration of the loop
+      compute_pose(point, dot, 4, cam, cMo, init_pose_from_linear_method);
+      if (init_pose_from_linear_method) {
+        init_pose_from_linear_method = false;
+      }
+      for (int i = 0; i < 4; ++i) {
         // Update the point feature from the dot location
         vpFeatureBuilder::create(p[i], cam, dot[i]);
         // Set the feature Z coordinate from the pose
@@ -397,11 +386,21 @@ int main()
     std::cout << "Display task information: " << std::endl;
     task.print();
     flog.close(); // Close the log file
+#if (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+    if (display != nullptr) {
+      delete display;
+    }
+#endif
     return EXIT_SUCCESS;
   }
   catch (const vpException &e) {
     flog.close(); // Close the log file
     std::cout << "Catch an exception: " << e.getMessage() << std::endl;
+#if (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+    if (display != nullptr) {
+      delete display;
+    }
+#endif
     return EXIT_FAILURE;
   }
 }

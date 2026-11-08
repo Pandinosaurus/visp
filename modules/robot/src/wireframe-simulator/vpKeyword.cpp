@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2026 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -34,8 +33,10 @@
  *
  * Authors:
  * Jean-Luc CORRE
- *
- *****************************************************************************/
+ */
+
+#include <visp3/core/vpConfig.h>
+#include <visp3/core/vpException.h>
 
 #include "vpKeyword.h"
 #include "vpMy.h"
@@ -45,7 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-
+BEGIN_VISP_NAMESPACE
 static void open_hash(void);
 static void close_hash(void);
 static int hashpjw(const char *str);
@@ -59,25 +60,26 @@ static char *get_keyword(void);
 #define PRIME 211
 #define NEXT(x) (x) = (x)->next
 
-typedef struct bucket {
-  struct bucket *next; /* element suivant	*/
-  char *ident;         /* identifateur 	*/
-  Byte length;         /* longueur de "ident"	*/
-  Index token;         /* code du jeton 	*/
+typedef struct bucket
+{
+  struct bucket *next; /* element suivant  */
+  char *ident;         /* identifateur   */
+  Byte length;         /* longueur de "ident"  */
+  Index token;         /* code du jeton   */
 } Bucket;
 
-static Bucket **hash_tbl; /* table de "hash-coding"	*/
+static Bucket **hash_tbl; /* table de "hash-coding"  */
 
 /*
  * La procedure "open_keyword" alloue et initialise les variables utilisees
  * par les procedures de gestion des mots cles.
  * Entree :
- * kwp		Tableau des mots cles termine par NULL.
+ * kwp    Tableau des mots cles termine par NULL.
  */
 void open_keyword(Keyword *kwp)
 {
   open_hash();
-  for (; kwp->ident != NULL; kwp++) /* recopie les mots cles	*/
+  for (; kwp->ident != NULL; kwp++) /* recopie les mots cles  */
     insert_keyword(kwp->ident, kwp->token);
 }
 
@@ -92,17 +94,15 @@ void close_keyword(void) { close_hash(); }
  */
 static void open_hash(void)
 {
-  Bucket **head, **bend;
-
   if ((hash_tbl = (Bucket **)malloc(sizeof(Bucket *) * PRIME)) == NULL) {
     static char proc_name[] = "open_hash";
     perror(proc_name);
-    exit(1);
+    throw vpException(vpException::fatalError, "Error in open_hash");
   }
-  head = hash_tbl;
-  bend = head + PRIME;
-  for (; head < bend; *head++ = NULL) {
-  };
+
+  for (unsigned int i = 0; i < PRIME; ++i) {
+    hash_tbl[i] = NULL;
+  }
 }
 
 /*
@@ -110,45 +110,47 @@ static void open_hash(void)
  */
 static void close_hash(void)
 {
-  Bucket **head = hash_tbl;
-  Bucket **bend = head + PRIME;
-  Bucket *bp;   /* element courant	*/
-  Bucket *next; /* element suivant	*/
+  if (hash_tbl == NULL) return;
 
-  for (; head < bend; head++) { /* libere les listes	*/
-    for (bp = *head; bp != NULL; bp = next) {
-      next = bp->next;
-      free((char *)bp);
+  // Utilisation d'un index pour parcourir la table
+  for (unsigned int i = 0; i < PRIME; ++i) {
+    Bucket *bp = hash_tbl[i];
+    while (bp != NULL) {
+      Bucket *next = bp->next;
+      free(bp);
+      bp = next;
     }
   }
-  free((char *)hash_tbl); /* libere la table	*/
+
+  free(hash_tbl); // Libération de la table elle-même
+  hash_tbl = NULL;
 }
 
 /*
  * La procedure "hashpjw" calcule un indice code a partir de la chaine
  * de caracteres "str".
  * Pour plus de renseignements, voir :
- *	"Compilers. Principles, Techniques, and Tools",
- *	A.V. AHO, R. SETHI, J.D. ULLMAN,
- *	ADDISON-WESLEY PUBLISHING COMPANY, pp 436.
+ *  "Compilers. Principles, Techniques, and Tools",
+ *  A.V. AHO, R. SETHI, J.D. ULLMAN,
+ *  ADDISON-WESLEY PUBLISHING COMPANY, pp 436.
  * Entree :
- * str		Chaine de caracteres a coder.
+ * str    Chaine de caracteres a coder.
  * Sortie :
- *		Le code de la chaine.
+ *    Le code de la chaine.
  */
 static int hashpjw(const char *str)
 {
-  unsigned h = 0; /* "hash value"	*/
+  unsigned h = 0; /* "hash value"  */
 
   for (; *str != '\0'; str++) {
     unsigned g;
-    h = (h << 4) + (unsigned)(*str);
-    if ((g = h & ~0xfffffff) != 0) {
+    h = (h << 4) + static_cast<unsigned int>(*str);
+    if ((g = h & ~0xfffffffU) != 0) {
       h ^= g >> 24;
       h ^= g;
     }
   }
-  return ((int)(h % PRIME));
+  return (static_cast<int>(h % PRIME));
 }
 
 /*
@@ -156,8 +158,8 @@ static int hashpjw(const char *str)
  * de la table de "hachage" le mot cle ayant pour identificateur
  * la chaine de caracteres "str" et pour valeur "token".
  * Entree :
- * str		Chaine de caracteres du mot cle.
- * token	Valeur du jeton associe au mot cle.
+ * str    Chaine de caracteres du mot cle.
+ * token  Valeur du jeton associe au mot cle.
  */
 static void insert_keyword(const char *str, Index token)
 {
@@ -169,14 +171,14 @@ static void insert_keyword(const char *str, Index token)
   if ((bp = (Bucket *)malloc(sizeof(Bucket) + length + 1)) == NULL) {
     static const char proc_name[] = "insert_keyword";
     perror(proc_name);
-    exit(1);
+    throw vpException(vpException::fatalError, "Error in insert_keyword");
   }
   bp->length = length;
   bp->token = token;
   bp->ident = (char *)(bp + 1);
   strcpy(bp->ident, str);
 
-  bp->next = *head; /* insere "b" en tete de "head"	*/
+  bp->next = *head; /* insere "b" en tete de "head"  */
   *head = bp;
 }
 
@@ -184,12 +186,12 @@ static void insert_keyword(const char *str, Index token)
  * La pocedure "get_symbol" verifie que la chaine pointee par "ident"
  * de longeur "length" est un mot cle.
  * Entree :
- * ident	Chaine de l'identificateur.
- * length	Nombre de caracteres de la chaine.
+ * ident  Chaine de l'identificateur.
+ * length  Nombre de caracteres de la chaine.
  * Note :
  * La chaine "ident" n'est pas terminee par '\0'.
  * Sortie :
- * 		Valeur du jeton associe si c'est un mot cle, 0 sinon.
+ *     Valeur du jeton associe si c'est un mot cle, 0 sinon.
  */
 Index get_symbol(char *ident, int length)
 {
@@ -198,13 +200,13 @@ Index get_symbol(char *ident, int length)
   char *idn = ident;
   int len = length;
 
-  {                 /* calcule le code de hachage (voir "hashpjw")	*/
-    unsigned h = 0; /* "hash value"	*/
+  {                 /* calcule le code de hachage (voir "hashpjw")  */
+    unsigned h = 0; /* "hash value"  */
 
     for (; len != 0; idn++, len--) {
       unsigned g;
-      h = (h << 4) + (unsigned)(*idn);
-      if ((g = h & ~0xfffffff) != 0) {
+      h = (h << 4) + static_cast<unsigned int>(*idn);
+      if ((g = h & ~0xfffffffU) != 0) {
         h ^= g >> 24;
         h ^= g;
       }
@@ -212,7 +214,7 @@ Index get_symbol(char *ident, int length)
     bp = hash_tbl[h % PRIME];
   }
 
-  /* recherche le mot cle	*/
+  /* recherche le mot cle  */
 
   for (; bp != NULL; NEXT(bp)) {
     if (length == bp->length) {
@@ -226,7 +228,7 @@ Index get_symbol(char *ident, int length)
       }
     }
   }
-  return (0); /*  identificateur	*/
+  return (0); /*  identificateur  */
 }
-
+END_VISP_NAMESPACE
 #endif

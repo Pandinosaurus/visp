@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2026 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,11 +29,7 @@
  *
  * Description:
  * Demonstration of the wireframe simulator with a simple visual servoing
- *
- * Authors:
- * Nicolas Melchior
- *
- *****************************************************************************/
+ */
 
 /*!
   \example servoSimu4Points.cpp
@@ -44,6 +39,7 @@
 
 #include <stdlib.h>
 
+#include <visp3/core/vpConfig.h>
 #include <visp3/core/vpCameraParameters.h>
 #include <visp3/core/vpHomogeneousMatrix.h>
 #include <visp3/core/vpImage.h>
@@ -51,11 +47,7 @@
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpTime.h>
 #include <visp3/core/vpVelocityTwistMatrix.h>
-#include <visp3/gui/vpDisplayD3D.h>
-#include <visp3/gui/vpDisplayGDI.h>
-#include <visp3/gui/vpDisplayGTK.h>
-#include <visp3/gui/vpDisplayOpenCV.h>
-#include <visp3/gui/vpDisplayX.h>
+#include <visp3/gui/vpDisplayFactory.h>
 #include <visp3/gui/vpPlot.h>
 #include <visp3/io/vpImageIo.h>
 #include <visp3/io/vpParseArgv.h>
@@ -67,19 +59,21 @@
 
 #define GETOPTARGS "dhp"
 
-#if defined(VISP_HAVE_DISPLAY) \
-  && (defined(VISP_HAVE_LAPACK) || defined(VISP_HAVE_EIGEN3) || defined(VISP_HAVE_OPENCV))
+#if defined(VISP_HAVE_DISPLAY) && (defined(VISP_HAVE_LAPACK) || defined(VISP_HAVE_EIGEN3) || defined(VISP_HAVE_OPENCV))
+
+#if defined(ENABLE_VISP_NAMESPACE)
+using namespace VISP_NAMESPACE_NAME;
+#endif
 
 /*!
 
   Print the program options.
 
   \param name : Program name.
-  \param ipath : Input image path.
   \param badparam : Bad parameter name.
 
 */
-void usage(const char *name, std::string ipath, const char *badparam)
+void usage(const char *name, const char *badparam)
 {
   fprintf(stdout, "\n\
 Demonstration of the wireframe simulator with a simple visual servoing.\n\
@@ -96,16 +90,11 @@ at a given distance from the world frame. In fact the object trajectory\n\
 is on a sphere whose center is the origin of the world frame.\n\
           \n\
 SYNOPSIS\n\
-  %s [-d] [-p] [-h]\n", name);
+  %s [-d] [-p] [-h]\n",
+          name);
 
   fprintf(stdout, "\n\
 OPTIONS:                                               Default\n\
-  -i <input image path>                                %s\n\
-     Set mire.pgm image input path.\n\
-     From this path read \"mire/mire.pgm\" image.\n\
-     Setting the VISP_INPUT_IMAGE_PATH environment variable \n\
-     produces the same behaviour than using this option.\n\
-            \n\
   -d \n\
      Turn off the display.\n\
             \n\
@@ -113,7 +102,7 @@ OPTIONS:                                               Default\n\
      Turn off the plotter.\n\
                     \n\
   -h\n\
-     Print the help.\n", ipath.c_str());
+     Print the help.\n");
 
   if (badparam)
     fprintf(stdout, "\nERROR: Bad parameter [%s]\n", badparam);
@@ -125,23 +114,19 @@ OPTIONS:                                               Default\n\
 
   \param argc : Command line number of parameters.
   \param argv : Array of command line parameters.
-  \param ipath : Input image path.
   \param display : Display activation.
   \param plot : Plotter activation.
 
   \return false if the program has to be stopped, true otherwise.
 
 */
-bool getOptions(int argc, const char **argv, std::string &ipath, bool &display, bool &plot)
+bool getOptions(int argc, const char **argv, bool &display, bool &plot)
 {
   const char *optarg_;
   int c;
   while ((c = vpParseArgv::parse(argc, argv, GETOPTARGS, &optarg_)) > 1) {
 
     switch (c) {
-    case 'i':
-      ipath = optarg_;
-      break;
     case 'd':
       display = false;
       break;
@@ -149,18 +134,18 @@ bool getOptions(int argc, const char **argv, std::string &ipath, bool &display, 
       plot = false;
       break;
     case 'h':
-      usage(argv[0], ipath, NULL);
+      usage(argv[0], nullptr);
       return false;
 
     default:
-      usage(argv[0], ipath, optarg_);
+      usage(argv[0], optarg_);
       return false;
     }
   }
 
   if ((c == 1) || (c == -1)) {
     // standalone param or error
-    usage(argv[0], ipath, NULL);
+    usage(argv[0], nullptr);
     std::cerr << "ERROR: " << std::endl;
     std::cerr << "  Bad argument " << optarg_ << std::endl << std::endl;
     return false;
@@ -171,40 +156,39 @@ bool getOptions(int argc, const char **argv, std::string &ipath, bool &display, 
 
 int main(int argc, const char **argv)
 {
+  const unsigned int NB_DISPLAYS = 3;
+#if (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
+  std::shared_ptr<vpDisplay> display[NB_DISPLAYS];
+  for (unsigned int i = 0; i < NB_DISPLAYS; ++i) {
+    display[i] = vpDisplayFactory::createDisplay();
+  }
+#else
+  vpDisplay *display[NB_DISPLAYS];
+  for (unsigned int i = 0; i < NB_DISPLAYS; ++i) {
+    display[i] = vpDisplayFactory::allocateDisplay();
+  }
+#endif
+  int exit_status = EXIT_SUCCESS;
   try {
     bool opt_display = true;
     bool opt_plot = true;
-    std::string opt_ipath;
-    std::string env_ipath;
-    std::string ipath;
-    std::string filename;
+    std::string filename = vpIoTools::getParent(argv[0]) + "/mire.png";
+    std::cout << "Read " << filename << std::endl;
 
     // Read the command line options
-    if (getOptions(argc, argv, opt_ipath, opt_display, opt_plot) == false) {
-      exit(-1);
+    if (getOptions(argc, argv, opt_display, opt_plot) == false) {
+      return EXIT_FAILURE;
     }
 
-    vpImage<vpRGBa> Iint(480, 640, 255);
-    vpImage<vpRGBa> Iext1(480, 640, 255);
-    vpImage<vpRGBa> Iext2(480, 640, 255);
-
-#if defined VISP_HAVE_X11
-    vpDisplayX display[3];
-#elif defined VISP_HAVE_OPENCV
-    vpDisplayOpenCV display[3];
-#elif defined VISP_HAVE_GDI
-    vpDisplayGDI display[3];
-#elif defined VISP_HAVE_D3D9
-    vpDisplayD3D display[3];
-#elif defined VISP_HAVE_GTK
-    vpDisplayGTK display[3];
-#endif
+    vpImage<vpRGBa> Iint(480, 640, vpRGBa(255));
+    vpImage<vpRGBa> Iext1(480, 640, vpRGBa(255));
+    vpImage<vpRGBa> Iext2(480, 640, vpRGBa(255));
 
     if (opt_display) {
       // Display size is automatically defined by the image (I) size
-      display[0].init(Iint, 100, 100, "The internal view");
-      display[1].init(Iext1, 100, 100, "The first external view");
-      display[2].init(Iext2, 100, 100, "The second external view");
+      display[0]->init(Iint, 100, 100, "The internal view");
+      display[1]->init(Iext1, 100, 100, "The first external view");
+      display[2]->init(Iext2, 100, 100, "The second external view");
       vpDisplay::setWindowPosition(Iint, 0, 0);
       vpDisplay::setWindowPosition(Iext1, 750, 0);
       vpDisplay::setWindowPosition(Iext2, 0, 550);
@@ -216,7 +200,7 @@ int main(int argc, const char **argv)
       vpDisplay::flush(Iext2);
     }
 
-    vpPlot *plotter = NULL;
+    vpPlot *plotter = nullptr;
 
     if (opt_plot) {
       plotter = new vpPlot(2, 480, 640, 750, 550, "Real time curves plotter");
@@ -322,18 +306,6 @@ int main(int argc, const char **argv)
     X[3][1] = 0.2;
     X[3][2] = 0;
 
-    // Get the visp-images-data package path or VISP_INPUT_IMAGE_PATH
-    // environment variable value
-    env_ipath = vpIoTools::getViSPImagesDataPath();
-
-    if (!env_ipath.empty())
-      ipath = env_ipath;
-
-    if (!opt_ipath.empty())
-      ipath = opt_ipath;
-
-    filename = vpIoTools::createFilePath(ipath, "mire/mire.pgm");
-
     imsim.init(filename.c_str(), X);
 
     list.push_back(imsim);
@@ -395,7 +367,7 @@ int main(int argc, const char **argv)
 
       while (!vpDisplay::getClick(Iint, false) && !vpDisplay::getClick(Iext1, false) &&
              !vpDisplay::getClick(Iext2, false)) {
-      };
+      }
     }
 
     robot.setPosition(wMc);
@@ -492,7 +464,7 @@ int main(int argc, const char **argv)
       std::cout << "|| s - s* || = " << (task.getError()).sumSquare() << std::endl;
     }
 
-    if (opt_plot && plotter != NULL) {
+    if (opt_plot && plotter != nullptr) {
       vpDisplay::display(Iint);
       sim.getInternalImage(Iint);
       vpDisplay::displayFrame(Iint, cMo, camera, 0.2, vpColor::none);
@@ -508,11 +480,18 @@ int main(int argc, const char **argv)
 
     task.print();
 
-    return EXIT_SUCCESS;
-  } catch (const vpException &e) {
-    std::cout << "Catch an exception: " << e << std::endl;
-    return EXIT_FAILURE;
+    exit_status = EXIT_SUCCESS;
   }
+  catch (const vpException &e) {
+    std::cout << "Catch an exception: " << e << std::endl;
+    exit_status = EXIT_FAILURE;
+  }
+#if (VISP_CXX_STANDARD < VISP_CXX_STANDARD_11)
+  for (unsigned int i = 0; i < NB_DISPLAYS; ++i) {
+    delete display[i];
+  }
+#endif
+  return exit_status;
 }
 #elif !(defined(VISP_HAVE_LAPACK) || defined(VISP_HAVE_EIGEN3) || defined(VISP_HAVE_OPENCV))
 int main()
@@ -523,7 +502,8 @@ int main()
 #else
 int main()
 {
-  std::cout << "You do not have X11, or GDI (Graphical Device Interface), or GTK functionalities to display images..." << std::endl;
+  std::cout << "You do not have X11, or GDI (Graphical Device Interface), or GTK functionalities to display images..."
+    << std::endl;
   std::cout << "Tip if you are on a unix-like system:" << std::endl;
   std::cout << "- Install X11, configure again ViSP using cmake and build again this example" << std::endl;
   std::cout << "Tip if you are on a windows-like system:" << std::endl;

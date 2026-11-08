@@ -4,8 +4,8 @@
   Example that shows how to simulate a visual servoing on a Pioneer mobile
   robot equipped with a camera. The current visual features that are used are
   s = (x, log(Z/Z*)). The desired one are s* = (x*, 0), with:
-  - x the abscisse of the point measured at each iteration
-  - x* the desired abscisse position of the point (x* = 0)
+  - x the abscise of the point measured at each iteration
+  - x* the desired abscise position of the point (x* = 0)
   - Z the depth of the point measured at each iteration
   - Z* the desired depth of the point equal to the initial one.
 
@@ -18,6 +18,7 @@
   */
 #include <iostream>
 
+#include <visp3/core/vpConfig.h>
 #include <visp3/core/vpHomogeneousMatrix.h>
 #include <visp3/core/vpVelocityTwistMatrix.h>
 #include <visp3/gui/vpPlot.h>
@@ -29,6 +30,9 @@
 
 int main()
 {
+#if defined(ENABLE_VISP_NAMESPACE)
+  using namespace VISP_NAMESPACE_NAME;
+#endif
   try {
     vpHomogeneousMatrix cdMo;
     cdMo[1][3] = 1.2;
@@ -92,7 +96,10 @@ int main()
     graph.setLegend(2, 0, "Z");
 #endif
 
+#ifdef VISP_HAVE_DISPLAY
     int iter = 0;
+#endif
+
     for (;;) {
       robot.getPosition(wMc);
       cMo = wMc.inverse() * wMo;
@@ -116,9 +123,8 @@ int main()
       graph.plot(0, iter, v);               // plot velocities applied to the robot
       graph.plot(1, iter, task.getError()); // plot error vector
       graph.plot(2, 0, iter, Z);            // plot the depth
-#endif
-
       iter++;
+#endif
 
       if (task.getError().sumSquare() < 0.0001) {
         std::cout << "Reached a small error. We stop the loop... " << std::endl;
@@ -130,7 +136,7 @@ int main()
     graph.saveData(1, "./error2.dat");
 
     const char *legend = "Click to quit...";
-    vpDisplay::displayText(graph.I, (int)graph.I.getHeight() - 60, (int)graph.I.getWidth() - 150, legend, vpColor::red);
+    vpDisplay::displayText(graph.I, static_cast<int>(graph.I.getHeight()) - 60, static_cast<int>(graph.I.getWidth()) - 150, legend, vpColor::red);
     vpDisplay::flush(graph.I);
     vpDisplay::getClick(graph.I);
 #endif
@@ -138,7 +144,8 @@ int main()
     // Kill the servo task
     task.print();
 
-  } catch (const vpException &e) {
+  }
+  catch (const vpException &e) {
     std::cout << "Catch an exception: " << e << std::endl;
   }
 }

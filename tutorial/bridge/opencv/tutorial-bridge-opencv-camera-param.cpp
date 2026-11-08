@@ -1,20 +1,28 @@
 //! \example tutorial-bridge-opencv-camera-param.cpp
+#include <iostream>
+
+#include <visp3/core/vpConfig.h>
+
+#if defined(VISP_HAVE_OPENCV) && defined(HAVE_OPENCV_IMGPROC) \
+  && (((VISP_HAVE_OPENCV_VERSION < 0x050000) && defined(HAVE_OPENCV_CALIB3D)) || ((VISP_HAVE_OPENCV_VERSION >= 0x050000) && defined(HAVE_OPENCV_GEOMETRY)))
+
 #include <visp3/core/vpCameraParameters.h>
 #include <visp3/core/vpImageConvert.h>
 #include <visp3/io/vpImageIo.h>
 
-#if VISP_HAVE_OPENCV_VERSION >= 0x040000
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#if defined(HAVE_OPENCV_CALIB3D)
 #include <opencv2/calib3d/calib3d.hpp>
-#elif VISP_HAVE_OPENCV_VERSION >= 0x020300
+#elif defined(HAVE_OPENCV_GEOMETRY)
+#include <opencv2/geometry/3d.hpp>
+#endif
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#endif
 
 int main()
 {
-#if VISP_HAVE_OPENCV_VERSION >= 0x020300
+#ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+#endif
   //! [Set ViSP camera parameters]
   double u0 = 326.6;
   double v0 = 215.0;
@@ -26,13 +34,24 @@ int main()
   //! [Set ViSP camera parameters]
 
   //! [Set OpenCV camera parameters]
+#if (VISP_HAVE_OPENCV_VERSION >= 0x050000)
+  cv::Mat K = cv::Mat_<double>(3, 3);
+  K.at<double>(0, 0) = cam.get_px(); K.at<double>(0, 1) = 0; K.at<double>(0, 2) = cam.get_u0();
+  K.at<double>(1, 0) = 0.; K.at<double>(1, 1) = cam.get_py(); K.at<double>(1, 2) = cam.get_v0();
+  K.at<double>(2, 0) = 0; K.at<double>(2, 1) = 0; K.at<double>(2, 2) = 1;
+  cv::Mat D = cv::Mat_<double>(4, 1, 0.);
+  D.at<double>(0, 0) = cam.get_kud();
+#else
   cv::Mat K = (cv::Mat_<double>(3, 3) << cam.get_px(), 0, cam.get_u0(), 0, cam.get_py(), cam.get_v0(), 0, 0, 1);
   cv::Mat D = (cv::Mat_<double>(4, 1) << cam.get_kud(), 0, 0, 0);
+#endif
   //! [Set OpenCV camera parameters]
 
   //! [Load ViSP image]
   vpImage<unsigned char> I;
-  vpImageIo::read(I, "chessboard.pgm");
+  std::string image_name = "chessboard.jpeg";
+  std::cout << "Read image: " << image_name << std::endl;
+  vpImageIo::read(I, image_name);
   //! [Load ViSP image]
 
   //! [Convert ViSP 2 OpenCV image]
@@ -51,7 +70,24 @@ int main()
   //! [Convert OpenCV 2 ViSP image]
 
   //! [Save image]
-  vpImageIo::write(IUndistorted, "chessboard-undistorted.pgm");
-//! [Save image]
-#endif
+  image_name = "chessboard-undistorted.jpeg";
+  std::cout << "Save undistorted image: " << image_name << std::endl;
+  vpImageIo::write(IUndistorted, image_name);
+  //! [Save image]
 }
+
+#else
+int main()
+{
+#if !defined(HAVE_OPENCV_IMGPROC)
+  std::cout << "This tutorial requires OpenCV imgproc module." << std::endl;
+#endif
+#if defined(VISP_HAVE_OPENCV) && (VISP_HAVE_OPENCV_VERSION < 0x050000) && !defined(HAVE_OPENCV_CALIB3D)
+  std::cout << "This tutorial requires OpenCV calib3d module." << std::endl;
+#endif
+#if defined(VISP_HAVE_OPENCV) && (VISP_HAVE_OPENCV_VERSION >= 0x050000) && !defined(HAVE_OPENCV_GEOMETRY)
+  std::cout << "This tutorial requires OpenCV geometry module." << std::endl;
+#endif
+  return EXIT_SUCCESS;
+}
+#endif

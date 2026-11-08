@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2026 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,11 +29,7 @@
  *
  * Description:
  * Example of sequential calls to QP solver
- *
- * Authors:
- * Olivier Kermorgant
- *
- *****************************************************************************/
+ */
 /*!
   \file quadprog.cpp
 
@@ -47,64 +42,90 @@
   Example of sequential calls to QP solver
 */
 
+#include <cstdlib>
 #include <iostream>
 #include <visp3/core/vpConfig.h>
 
-#if (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11) && defined(VISP_HAVE_LAPACK)
+#if defined(VISP_HAVE_LAPACK) && (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
 
 #include <visp3/core/vpQuadProg.h>
 #include <visp3/core/vpTime.h>
 
 #include "qp_plot.h"
 
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-  const int n = 20;   // x dim
-  const int m = 10;   // equality m < n
-  const int p = 30;   // inequality
-  const int o = 16;   // cost function
+#ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+#endif
+
+  const int n = 20; // x dim
+  const int m = 10; // equality m < n
+  const int p = 30; // inequality
+  const int o = 16; // cost function
 #ifdef VISP_HAVE_DISPLAY
   bool opt_display = true;
+  bool opt_click_allowed = true;
 #endif
 
-  for (int i = 0; i < argc; i++) {
+  unsigned int seed = static_cast<unsigned int>(static_cast<unsigned long long>(vpTime::measureTimeMs()));
+
+  for (int i = 1; i < argc; i++) {
 #ifdef VISP_HAVE_DISPLAY
-    if (std::string(argv[i]) == "-d")
+    if (std::string(argv[i]) == "-d") {
       opt_display = false;
+    }
+    else if (std::string(argv[i]) == "-c") {
+      opt_click_allowed = false;
+    }
     else
 #endif
-    if (std::string(argv[i]) == "-h") {
-      std::cout << "\nUsage: " << argv[0] << " [-d] [-h]" << std::endl;
-      std::cout << "\nOptions: \n"
+      if (std::string(argv[i]) == "--seed" && i + 1 < argc) {
+        seed = static_cast<unsigned int>(std::strtoul(argv[++i], nullptr, 10));
+      }
+      else if (std::string(argv[i]) == "-h" || std::string(argv[i]) == "--help") {
+        std::cout << "\nUsage: " << argv[0] << " [-d] [-c] [--seed <n>] [-h] [--help]" << std::endl;
+        std::cout << "\nOptions: \n"
 #ifdef VISP_HAVE_DISPLAY
-                   "  -d \n"
-                   "     Disable the image display. This can be useful \n"
-                   "     for automatic tests using crontab under Unix or \n"
-                   "     using the task manager under Windows.\n"
-                   "\n"
+          "  -d \n"
+          "     Disable the image display. This can be useful \n"
+          "     for automatic tests using crontab under Unix or \n"
+          "     using the task manager under Windows.\n"
+          "\n"
+          "  -c \n"
+          "     Disable the mouse click. Useful to automate the \n"
+          "     execution of this program without human intervention.\n"
+          "\n"
 #endif
-                   "  -h\n"
-                   "     Print the help.\n"<< std::endl;
+          "  --seed <n>\n"
+          "     Seed used to generate the random QP problems. \n"
+          "     By default the seed is set from the current time.\n"
+          "\n"
+          "  -h, --help\n"
+          "     Print the help.\n"
+          << std::endl;
 
-      return EXIT_SUCCESS;
-    }
+        return EXIT_SUCCESS;
+      }
   }
-  std::srand((long) vpTime::measureTimeMs());
+  std::cout << "Random seed: " << seed << " (use --seed " << seed << " to reproduce)" << std::endl;
+  std::srand(seed);
 
   vpMatrix A, Q, C;
   vpColVector b, d, r;
 
-  A = randM(m,n)*5;
-  b = randV(m)*5;
-  Q = randM(o,n)*5;
-  r = randV(o)*5;
-  C = randM(p,n)*5;
+  A = randM(m, n) * 5;
+  b = randV(m) * 5;
+  Q = randM(o, n) * 5;
+  r = randV(o) * 5;
+  C = randM(p, n) * 5;
 
-  // make sure Cx <= d has a solution within Ax = b
+    // make sure Cx <= d has a solution within Ax = b
   vpColVector x = A.solveBySVD(b);
-  d = C*x;
-  for(int i = 0; i < p; ++i)
-    d[i] += (5.*rand())/RAND_MAX;
+  d = C * x;
+  for (unsigned int i = 0; i < p; ++i) {
+    d[i] += (5. * rand()) / RAND_MAX;
+  }
 
   // solver with warm start
   vpQuadProg qp_WS;
@@ -115,23 +136,22 @@ int main (int argc, char **argv)
   const double eps = 1e-2;
 
 #ifdef VISP_HAVE_DISPLAY
-  QPlot *plot = NULL;
+  QPlot *plot = nullptr;
   if (opt_display)
-    plot = new QPlot(1, total, {"time to solveQP", "warm start"});
+    plot = new QPlot(1, total, { "time to solveQP", "warm start" });
 #endif
 
-  for(int k = 0; k < total; ++k)
-  {
+  for (int k = 0; k < total; ++k) {
     // reset active set at some point
-    if(k == total/2)
+    if (k == total / 2)
       qp_WS.resetActiveSet();
 
     // small change on QP data
-    Q += eps * randM(o,n);
+    Q += eps * randM(o, n);
     r += eps * randV(o);
-    A += eps * randM(m,n);
+    A += eps * randM(m, n);
     b += eps * randV(m);
-    C += eps * randM(p,n);
+    C += eps * randM(p, n);
     d += eps * randV(p);
 
     // solver without warm start
@@ -143,7 +163,7 @@ int main (int argc, char **argv)
     t_noWS += vpTime::measureTimeMs() - t;
 #ifdef VISP_HAVE_DISPLAY
     if (opt_display)
-      plot->plot(0,0,k,t);
+      plot->plot(0, 0, k, t);
 #endif
 
     // with warm start
@@ -159,12 +179,15 @@ int main (int argc, char **argv)
   }
 
   std::cout.precision(3);
-  std::cout << "Warm start: t = " << t_WS << " ms (for 1 QP = " << t_WS/total << " ms)\n";
-  std::cout << "No warm start: t = " << t_noWS << " ms (for 1 QP = " << t_noWS/total << " ms)" << std::endl;
+  std::cout << "Warm start: t = " << t_WS << " ms (for 1 QP = " << t_WS / total << " ms)\n";
+  std::cout << "No warm start: t = " << t_noWS << " ms (for 1 QP = " << t_noWS / total << " ms)" << std::endl;
 
 #ifdef VISP_HAVE_DISPLAY
   if (opt_display) {
-    plot->wait();
+    if (opt_click_allowed) {
+      std::cout << "Click in the graph to exit..." << std::endl;
+      plot->wait();
+    }
     delete plot;
   }
 #endif

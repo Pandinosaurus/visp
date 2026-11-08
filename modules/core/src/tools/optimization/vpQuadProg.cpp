@@ -1,7 +1,6 @@
-/****************************************************************************
- *
+/*
  * ViSP, open source Visual Servoing Platform software.
- * Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2025 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +13,7 @@
  * GPL, please contact Inria about acquiring a ViSP Professional
  * Edition License.
  *
- * See http://visp.inria.fr for more information.
+ * See https://visp.inria.fr for more information.
  *
  * This software was developed at:
  * Inria Rennes - Bretagne Atlantique
@@ -30,18 +29,14 @@
  *
  * Description:
  * Quadratic Programming
- *
- * Authors:
- * Olivier Kermorgant
- *
- *****************************************************************************/
+ */
 
 #include <algorithm>
 #include <visp3/core/vpMatrixException.h>
 #include <visp3/core/vpQuadProg.h>
 
 #if (VISP_CXX_STANDARD >= VISP_CXX_STANDARD_11)
-
+BEGIN_VISP_NAMESPACE
 /*!
   Changes a canonical quadratic cost \f$\min \frac{1}{2}\mathbf{x}^T\mathbf{H}\mathbf{x} + \mathbf{c}^T\mathbf{x}\f$
   to the formulation used by this class \f$ \min ||\mathbf{Q}\mathbf{x} - \mathbf{r}||^2\f$.
@@ -67,9 +62,14 @@
   \Leftrightarrow
   \begin{array}{lll}
   \mathbf{x} = &  \arg\min & \frac{1}{2}\mathbf{x}^T\left[\begin{array}{cc}4 & 1 \\ 1 & 2\end{array}\right]\mathbf{x} +
-  [1~1]\mathbf{x}\\ & \text{s.t.}& [1~1]\mathbf{x} = 1 \end{array} \f$ \code
+  [1~1]\mathbf{x}\\ & \text{s.t.}& [1~1]\mathbf{x} = 1 \end{array} \f$
 
+  \code
   #include <visp3/core/vpLinProg.h>
+
+  #ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+  #endif
 
   int main()
   {
@@ -127,7 +127,7 @@ void vpQuadProg::fromCanonicalCost(const vpMatrix &H, const vpColVector &c, vpMa
   r = -Q.t().pseudoInverse() * c;
 #else
   throw(vpException(vpException::functionNotImplementedError, "Symmetric matrix decomposition is not implemented. You "
-                                                              "should install Lapack, Eigen3 or OpenCV 3rd party"));
+                    "should install Lapack, Eigen3 or OpenCV 3rd party"));
 #endif
 }
 
@@ -184,7 +184,8 @@ bool vpQuadProg::solveByProjection(const vpMatrix &Q, const vpColVector &r, vpMa
       x = b + A * (Q * A).solveBySVD(r - Q * b);
     else
       x = b;
-  } else
+  }
+  else
     x = Q.solveBySVD(r);
   return true;
 }
@@ -213,8 +214,11 @@ bool vpQuadProg::solveByProjection(const vpMatrix &Q, const vpColVector &r, vpMa
   \mathbf{x} = &  \arg\min & (x_1-1)^2 + x_2^2  \\
                & \text{s.t.}& x_1 + x_2 = 1\end{array}\f$
   \code
-
   #include <visp3/core/vpLinProg.h>
+
+  #ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+  #endif
 
   int main()
   {
@@ -246,7 +250,7 @@ bool vpQuadProg::solveQPe(const vpMatrix &Q, const vpColVector &r, vpColVector &
   unsigned int n = Q.getCols();
   if (Q.getRows() != r.getRows() || Z.getRows() != n || x1.getRows() != n) {
     std::cout << "vpQuadProg::solveQPe: wrong dimension\n"
-              << "Q: " << Q.getRows() << "x" << Q.getCols() << " - r: " << r.getRows() << std::endl;
+      << "Q: " << Q.getRows() << "x" << Q.getCols() << " - r: " << r.getRows() << std::endl;
     std::cout << "Z: " << Z.getRows() << "x" << Z.getCols() << " - x1: " << x1.getRows() << std::endl;
     throw vpMatrixException::dimensionError;
   }
@@ -255,7 +259,8 @@ bool vpQuadProg::solveQPe(const vpMatrix &Q, const vpColVector &r, vpColVector &
       x = x1 + Z * (Q * Z).solveBySVD(r - Q * x1);
     else
       x = x1;
-  } else
+  }
+  else
     x = Q.solveBySVD(r);
   return true;
 }
@@ -285,8 +290,11 @@ bool vpQuadProg::solveQPe(const vpMatrix &Q, const vpColVector &r, vpColVector &
   \mathbf{x} = &  \arg\min & (x_1-1)^2 + x_2^2  \\
                & \text{s.t.}& x_1 + x_2 = 1\end{array}\f$
   \code
-
   #include <visp3/core/vpLinProg.h>
+
+  #ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+  #endif
 
   int main()
   {
@@ -348,8 +356,11 @@ bool vpQuadProg::solveQPe(const vpMatrix &Q, const vpColVector &r, vpMatrix A, v
                & \text{s.t.}& x_1 + x_2 = 1  \\
                 & \text{s.t.} & x_2 \geq 1\end{array}\f$
   \code
-
   #include <visp3/core/vpLinProg.h>
+
+  #ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+  #endif
 
   int main()
   {
@@ -386,7 +397,8 @@ bool vpQuadProg::solveQP(const vpMatrix &Q, const vpColVector &r, vpMatrix A, vp
   if (A.getCols() && solveQPi(Q * A, r - Q * b, C * A, d - C * b, x, false, tol)) {
     x = b + A * x;
     return true;
-  } else if (vpLinProg::allLesser(C, b, d, tol)) // Ax = b has only 1 solution
+  }
+  else if (vpLinProg::allLesser(C, b, d, tol)) // Ax = b has only 1 solution
   {
     x = b;
     return true;
@@ -411,7 +423,8 @@ bool vpQuadProg::solveQP(const vpMatrix &Q, const vpColVector &r, vpMatrix A, vp
   \param use_equality : if a previously saved equality constraint (setEqualityConstraint()) should be considered
   \param tol : tolerance to test the ranks
 
-  \return True if the solution was found.
+  \return True if the solution was found, false if the problem is not feasible or if the maximum number of
+  iterations is reached (degenerate problem).
 
   Here is an example:
 
@@ -420,8 +433,11 @@ bool vpQuadProg::solveQP(const vpMatrix &Q, const vpColVector &r, vpMatrix A, vp
                & \text{s.t.}& x_1 + x_2 \leq 1  \\
                 & \text{s.t.} & x_1, x_2 \geq 0\end{array}\f$
   \code
-
   #include <visp3/core/vpLinProg.h>
+
+  #ifdef ENABLE_VISP_NAMESPACE
+  using namespace VISP_NAMESPACE_NAME;
+  #endif
 
   int main()
   {
@@ -451,13 +467,15 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
         // back to initial solution
         x = x1 + Z * x;
         return true;
-      } else if (vpLinProg::allLesser(C, x1, d, tol)) {
+      }
+      else if (vpLinProg::allLesser(C, x1, d, tol)) {
         x = x1;
         return true;
       }
       std::cout << "vpQuadProg::solveQPi: inequality constraint infeasible" << std::endl;
       return false;
-    } else
+    }
+    else
       std::cout << "vpQuadProg::solveQPi: use_equality before setEqualityConstraint" << std::endl;
   }
 
@@ -484,8 +502,8 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
   }
 
   // warm start from previous active set
-  A.resize((unsigned int)active.size(), n);
-  b.resize((unsigned int)active.size());
+  A.resize(static_cast<unsigned int>(active.size()), n);
+  b.resize(static_cast<unsigned int>(active.size()));
   for (unsigned int i = 0; i < active.size(); ++i) {
     for (unsigned int j = 0; j < n; ++j)
       A[i][j] = C[active[i]][j];
@@ -532,10 +550,14 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
         A_lp[i][2 * n + p + l] = -1;
         xc[2 * n + p + l] = -e[i];
         l++;
-      } else
+      }
+      else
         xc[2 * n + i] = e[i];
     }
-    vpLinProg::simplex(c, A_lp, e, xc);
+    if (!vpLinProg::simplex(c, A_lp, e, xc)) {
+      std::cout << "vpQuadProg::solveQPi: could not find a feasible point" << std::endl;
+      return false;
+    }
 
     // r-part should be 0
     if (!vpLinProg::allLesser(xc.extract(2 * n + p, k), tol)) {
@@ -555,7 +577,8 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
       else
         active.push_back(i);
     }
-  } else // warm start feasible
+  }
+  else // warm start feasible
   {
     // using previous active set, check that inactive is sync
     if (active.size() + inactive.size() != p) {
@@ -573,10 +596,21 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
 
   vpColVector u, g = r - Q * x, mu;
 
+  // limit the number of active set changes to avoid an infinite loop if constraints cycle on a degenerate problem
+  const unsigned int max_iter = 100 * (n + p);
+  unsigned int iter = 0;
+
   // solve at one iteration
   while (true) {
-    A.resize((unsigned int)active.size(), n);
-    b.resize((unsigned int)active.size());
+    if (++iter > max_iter) {
+      std::cout << "vpQuadProg::solveQPi: maximum number of iterations reached, problem may be degenerate" << std::endl;
+      // do not warm start the next call from an active set that cycles
+      active.clear();
+      inactive.clear();
+      return false;
+    }
+    A.resize(static_cast<unsigned int>(active.size()), n);
+    b.resize(static_cast<unsigned int>(active.size()));
     for (unsigned int i = 0; i < active.size(); ++i) {
       for (unsigned int j = 0; j < n; ++j)
         A[i][j] = C[active[i]][j];
@@ -593,7 +627,7 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
     // 0-update = optimal or useless activated constraints
     if (vpLinProg::allZero(u, tol)) {
       // compute multipliers if any
-      unsigned int ineqInd = (unsigned int)active.size();
+      unsigned int ineqInd = static_cast<unsigned int>(active.size());
       if (active.size()) {
         mu = -Ap.transpose() * Q.transpose() * (Q * u - g);
         // find most negative one if any - except last activated in case of degeneracy
@@ -616,7 +650,8 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
       else
         active.erase(active.begin() + ineqInd);
       update_Ap = true;
-    } else // u != 0, can improve xc
+    }
+    else // u != 0, can improve xc
     {
       unsigned int ineqInd = 0;
       // step length to next constraint
@@ -638,11 +673,13 @@ bool vpQuadProg::solveQPi(const vpMatrix &Q, const vpColVector &r, const vpMatri
           while (it != active.end() && *it < inactive[ineqInd])
             it++;
           active.insert(it, inactive[ineqInd]);
-        } else
+        }
+        else
           active.push_back(inactive[ineqInd]);
         inactive.erase(inactive.begin() + ineqInd);
         update_Ap = true;
-      } else
+      }
+      else
         update_Ap = false;
       // update x for next iteration
       x += alpha * u;
@@ -668,6 +705,7 @@ vpColVector vpQuadProg::solveSVDorQR(const vpMatrix &A, const vpColVector &b)
     return A.solveBySVD(b);
   return A.solveByQR(b);
 }
+END_VISP_NAMESPACE
 #else
-void dummy_vpQuadProg(){};
+void dummy_vpQuadProg() { }
 #endif

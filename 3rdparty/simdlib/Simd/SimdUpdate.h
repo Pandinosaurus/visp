@@ -1,7 +1,8 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2019 Yermalayeu Ihar.
+* Copyright (c) 2011-2022 Yermalayeu Ihar,
+*               2022-2022 Souriya Trinh.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +46,22 @@ namespace Simd
         {
             *p += a;
         }
+
+        //-----------------------------------------------------------------------------------------
+
+        template <UpdateType update> SIMD_INLINE void Update(int32_t* p, int32_t a)
+        {
+            *p = a;
+        }
+
+        template <> SIMD_INLINE void Update<UpdateAdd>(int32_t* p, int32_t a)
+        {
+            *p += a;
+        }
     }
 
-#ifdef SIMD_SSE_ENABLE
-    namespace Sse
+#ifdef SIMD_SSE41_ENABLE
+    namespace Sse41
     {
         template <UpdateType update, bool align> SIMD_INLINE void Update(float  * p, __m128 a)
         {
@@ -64,12 +77,9 @@ namespace Simd
         {
             Store<true>(p, _mm_add_ps(Load<true>(p), a));
         }
-    }
-#endif//SIMD_SSE_ENABLE
 
-#ifdef SIMD_SSE2_ENABLE
-    namespace Sse2
-    {
+        //-----------------------------------------------------------------------------------------
+
         template <UpdateType update, bool align> SIMD_INLINE void Update(int32_t  * p, __m128i a)
         {
             Store<align>((__m128i*)p, a);
@@ -85,7 +95,7 @@ namespace Simd
             Store<true>((__m128i*)p, _mm_add_epi32(Load<true>((__m128i*)p), a));
         }
     }
-#endif//SIMD_SSE2_ENABLE
+#endif//SIMD_SSE41_ENABLE
 
 #ifdef SIMD_AVX_ENABLE
     namespace Avx
@@ -160,6 +170,6 @@ namespace Simd
             Store<true>(p, vaddq_f32(Load<true>(p), a));
         }
     }
-#endif//SIMD_SSE_ENABLE
+#endif//SIMD_NEON_ENABLE
 }
 #endif//__SimdUpdate_h__

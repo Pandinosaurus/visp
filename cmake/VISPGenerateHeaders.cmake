@@ -1,7 +1,7 @@
 #############################################################################
 #
 # ViSP, open source Visual Servoing Platform software.
-# Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+# Copyright (C) 2005 - 2026 by Inria. All rights reserved.
 #
 # This software is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GPL, please contact Inria about acquiring a ViSP Professional
 # Edition License.
 #
-# See http://visp.inria.fr for more information.
+# See https://visp.inria.fr for more information.
 #
 # This software was developed at:
 # Inria Rennes - Bretagne Atlantique
@@ -28,58 +28,72 @@
 # This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 # WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-# Authors:
-# Fabien Spindler
-#
 #############################################################################
 
 # ----------------------------------------------------------------------------
 # platform-specific config file vpConfig.h
 # ----------------------------------------------------------------------------
 
-# case 1: when ViSP is build with make; files are used in <binary dir>
+# ----------------------------------------------------------------------------
+# case 1: when ViSP is build with make; files are used in <binary dir> AND in <install dir>
+# ----------------------------------------------------------------------------
+# - Consider the case for usage from the <binary dir>
 set(data_location_ ${VISP_BINARY_DIR})
 set(VISP_SCENES_DIR ${data_location_}/data/wireframe-simulator)
 set(VISP_ROBOT_ARMS_DIR ${data_location_}/data/robot-simulator)
-# Note that VISP_HAVE_OGRE_RESOURCES_PATH and VISP_HAVE_OGRE_PLUGINS_PATH are set in OgreTools.cmake
-set(data_location_ "${CMAKE_INSTALL_PREFIX}/${VISP_INSTALL_DATAROOTDIR}")
+#   Rubik-Regular.ttf font for vpFont
+set(VISP_RUBIK_REGULAR_FONT_RESOURCES "${data_location_}/data/font/Rubik-Regular.ttf")
+set(VISP_HAVE_OGRE_RESOURCES_PATH "${data_location_}/data/ogre-simulator")
+set(VISP_HAVE_OGRE_PLUGINS_PATH "${data_location_}/data/ogre-simulator")
+
+# - Consider the case for usage from the <install dir>
+if(UNIX)
+  set(data_location_ "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/visp-${VISP_VERSION}")
+  set(data_location_ogre_ "${CMAKE_INSTALL_PREFIX}/${VISP_OGRE_DATA_INSTALL_PATH}")
+else()
+  set(data_location_ "${CMAKE_INSTALL_PREFIX}")
+  set(data_location_ogre_ "${CMAKE_INSTALL_PREFIX}")
+endif()
 list(APPEND VISP_SCENES_DIR ${data_location_}/data/wireframe-simulator)
 list(APPEND VISP_ROBOT_ARMS_DIR ${data_location_}/data/robot-simulator)
-if(VISP_INSTALL_DIR_OGRE_RESOURCES)
-  list(APPEND VISP_HAVE_OGRE_RESOURCES_PATH "${data_location_}/data/ogre-simulator")
-endif()
-# append to VISP_HAVE_OGRE_PLUGINS_PATH the path of the installed plugins.cfg file
-# to be able to use ViSP from install tree
-if(VISP_INSTALL_DIR_OGRE_RESOURCES)
-  list(APPEND VISP_HAVE_OGRE_PLUGINS_PATH "${CMAKE_INSTALL_PREFIX}/${VISP_LIB_INSTALL_PATH}/visp/data/ogre-simulator")
-endif()
+list(APPEND VISP_RUBIK_REGULAR_FONT_RESOURCES "${data_location_}/data/font/Rubik-Regular.ttf")
+list(APPEND VISP_HAVE_OGRE_RESOURCES_PATH "${data_location_}/data/ogre-simulator")
+list(APPEND VISP_HAVE_OGRE_PLUGINS_PATH "${data_location_ogre_}/data/ogre-simulator")
 
 configure_file("${VISP_SOURCE_DIR}/cmake/templates/vpConfig.h.in" "${VISP_INCLUDE_DIR}/visp3/core/vpConfig.h")
 
-# case 2: when ViSP is build with make install; files are used in <install dir>
+# ----------------------------------------------------------------------------
+# case 2: when ViSP is build with make install; files are used in <install dir> ONLY
+# ----------------------------------------------------------------------------
+# - Consider the case for usage from the <install dir>
 if(UNIX)
   set(data_location_ "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/visp-${VISP_VERSION}")
+  set(data_location_ogre_ "${CMAKE_INSTALL_PREFIX}/${VISP_OGRE_DATA_INSTALL_PATH}")
 else()
   set(data_location_ "${CMAKE_INSTALL_PREFIX}")
+  set(data_location_ogre_ "${CMAKE_INSTALL_PREFIX}")
 endif()
 set(VISP_SCENES_DIR ${data_location_}/data/wireframe-simulator)
 set(VISP_ROBOT_ARMS_DIR ${data_location_}/data/robot-simulator)
-if(VISP_INSTALL_DIR_OGRE_RESOURCES)
-  set(VISP_HAVE_OGRE_RESOURCES_PATH "${data_location_}/data/ogre-simulator")
-endif()
-# append to VISP_HAVE_OGRE_PLUGINS_PATH the path of the installed plugins.cfg file
-# to be able to use ViSP from install tree
-if(VISP_INSTALL_DIR_OGRE_RESOURCES)
-  set(VISP_HAVE_OGRE_PLUGINS_PATH "${CMAKE_INSTALL_PREFIX}/${VISP_LIB_INSTALL_PATH}/visp/data/ogre-simulator")
-endif()
+#   Rubik-Regular.ttf font for vpFont
+set(VISP_RUBIK_REGULAR_FONT_RESOURCES "${data_location_}/data/font/Rubik-Regular.ttf")
+set(VISP_HAVE_OGRE_RESOURCES_PATH "${data_location_}/data/ogre-simulator")
+set(VISP_HAVE_OGRE_PLUGINS_PATH "${data_location_ogre_}/data/ogre-simulator")
 
 if(UNIX)
   configure_file("${VISP_SOURCE_DIR}/cmake/templates/vpConfig.h.in" "${VISP_BINARY_DIR}/unix-install/vpConfig.h")
 
-  install(FILES "${VISP_BINARY_DIR}/unix-install/vpConfig.h"
-    DESTINATION ${VISP_INC_INSTALL_PATH}/visp3/core
-    COMPONENT dev
-  )
+  if(ENABLE_MULTIARCH)
+    install(FILES "${VISP_BINARY_DIR}/unix-install/vpConfig.h"
+      DESTINATION ${VISP_INC_INSTALL_PATH}/${CMAKE_LIBRARY_ARCHITECTURE}/visp3/core
+      COMPONENT dev
+    )
+  else()
+    install(FILES "${VISP_BINARY_DIR}/unix-install/vpConfig.h"
+      DESTINATION ${VISP_INC_INSTALL_PATH}/visp3/core
+      COMPONENT dev
+    )
+  endif()
 
 else()
   configure_file("${VISP_SOURCE_DIR}/cmake/templates/vpConfig.h.in" "${VISP_BINARY_DIR}/win-install/vpConfig.h")
@@ -150,6 +164,13 @@ install(FILES "${VISP_INCLUDE_DIR}/visp3/visp.h"
 #  install old headers to keep compat with dev based on ViSP 2.x releases
 # ----------------------------------------------------------------------------
 file(GLOB old_hdrs "${VISP_INCLUDE_DIR}/visp/*.h")
+if(ENABLE_MULTIARCH)
+  list(REMOVE_ITEM old_hdrs "${VISP_INCLUDE_DIR}/visp/vpConfig.h")
+  install(FILES "${VISP_INCLUDE_DIR}/visp/vpConfig.h"
+    DESTINATION ${VISP_INC_INSTALL_PATH}/${CMAKE_LIBRARY_ARCHITECTURE}/visp
+    COMPONENT dev
+  )
+endif()
 install(FILES ${old_hdrs}
   DESTINATION ${VISP_INC_INSTALL_PATH}/visp
   COMPONENT dev

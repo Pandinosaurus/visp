@@ -1,7 +1,7 @@
 #############################################################################
 #
 # ViSP, open source Visual Servoing Platform software.
-# Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+# Copyright (C) 2005 - 2026 by Inria. All rights reserved.
 #
 # This software is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GPL, please contact Inria about acquiring a ViSP Professional
 # Edition License.
 #
-# See http://visp.inria.fr for more information.
+# See https://visp.inria.fr for more information.
 #
 # This software was developed at:
 # Inria Rennes - Bretagne Atlantique
@@ -35,131 +35,75 @@
 # GDI_FOUND        - system has GDI
 # GDI_LIBRARIES    - libraries you need to link to
 #
-# Authors:
-# Fabien Spindler
-#
 #############################################################################
 
-SET(GDI_FOUND "NO")
 
-# GDI (Graphics Device Interface)  is only available on Windows platforms
-IF(WIN32)
-  IF(MINGW)
-    FIND_LIBRARY(GDI_LIBRARY gdi32
-                 "C:/MinGW/lib"
-                 "C:/mingw/mingw/lib"
-                 "$ENV{MINGW_DIR}/lib"
-                 "$ENV{MINGW_DIR}/mingw/lib"
-                 DOC "Where can the GDI (Graphics Device Interface) library be found"
-                 NO_DEFAULT_PATH
-                )
-  ELSE(MINGW)
-    IF(CMAKE_CL_64)
-      # Generic path search
-      file(GLOB _gdi_search_path "C:/Program Files (x86)/Windows Kits/*/Lib/*/um/x64")
-	  list(REVERSE _gdi_search_path) # to search first in the more recent SDK
-      FIND_LIBRARY(GDI_LIBRARY gdi32
-                   "$ENV{WINSDK_DIR}/Lib/x64"
-                   "$ENV{WINSDK_HOME}/Lib/x64"
-                   "$ENV{DXSDK_DIR}/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.0/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.0a/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.1/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v7.0A/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v7.1/Lib/x64"
-                   "C:/Program Files/Microsoft SDKs/Windows/v7.1A/Lib/x64"
-                   "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/Lib/x64"
-                   "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A/Lib/x64"
-                   ${_gdi_search_path}
-                   "C:/Program Files/Microsoft Platform SDK/Lib/x64"
-                   "C:/DXSDK/Include/Lib/x64"
-                   DOC "Where can the GDI (Graphics Device Interface) library be found"
-                  )
+set(GDI_FOUND FALSE)
 
-      # Specific path search for Visual Studio .NET 2003
-      IF(MSVC71)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio .NET 2003/Vc7/PlatformSDK/Lib"
-                      )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC71)
+# GDI (Graphics Device Interface) is only available on Windows platforms
+if(WIN32)
+  if(MINGW)
+    set(GDI_SEARCH_HINTS
+      ${MINGW_DIR}
+      $ENV{MINGW_DIR}
+    )
+    set(GDI_SEARCH_PATHS
+      "C:/mingw64"
+      "C:/mingw64/x86_64-w64-mingw32"
+      "C:/MinGW"
+      "C:/mingw/mingw"
+      "C:/mingw32"
+      "C:/mingw32/i686-w64-mingw32"
+    )
+    set(GDI_LIB_SUFFIXES lib)
+  else()
+    if(CMAKE_CL_64)
+      set(_gdi_arch x64)
+      set(GDI_LIB_SUFFIXES Lib/x64)
+    else()
+      set(_gdi_arch x86)
+      set(GDI_LIB_SUFFIXES Lib)
+    endif()
+    # Windows Kits 8.0 and later, most recent SDK first
+    file(GLOB _gdi_winkits_path "C:/Program Files (x86)/Windows Kits/*/Lib/*/um/${_gdi_arch}")
+    list(REVERSE _gdi_winkits_path)
 
-      # Specific path search for Visual Studio 2005
-      IF(MSVC80)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio 8/VC/PlatformSDK/Lib/AMD64"         )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC80)
+    set(GDI_SEARCH_HINTS
+      ${WINSDK_DIR}
+      $ENV{WINSDK_DIR}
+      ${WINSDK_HOME}
+      $ENV{WINSDK_HOME}
+      ${DXSDK_DIR}
+      $ENV{DXSDK_DIR}
+    )
+    set(GDI_SEARCH_PATHS
+      "C:/Program Files/Microsoft SDKs/Windows/v6.0"
+      "C:/Program Files/Microsoft SDKs/Windows/v6.0a"
+      "C:/Program Files/Microsoft SDKs/Windows/v6.1"
+      "C:/Program Files/Microsoft SDKs/Windows/v7.0A"
+      "C:/Program Files/Microsoft SDKs/Windows/v7.1"
+      "C:/Program Files/Microsoft SDKs/Windows/v7.1A"
+      "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A"
+      "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1"
+      "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A"
+      ${_gdi_winkits_path}
+      "C:/Program Files/Microsoft Platform SDK"
+      "C:/DXSDK"
+    )
+  endif()
 
-      # Specific path search for Visual Studio 2008
-      IF(MSVC90)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio 9/VC/PlatformSDK/Lib/AMD64"         )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC90)
+  find_library(GDI_LIBRARY gdi32
+    HINTS ${GDI_SEARCH_HINTS}
+    PATHS ${GDI_SEARCH_PATHS}
+    PATH_SUFFIXES ${GDI_LIB_SUFFIXES}
+    DOC "Where can the GDI (Graphics Device Interface) library be found"
+  )
 
-    ELSE(CMAKE_CL_64)
-      # Generic path search
-      file(GLOB _gdi_search_path "C:/Program Files (x86)/Windows Kits/*/Lib/*/um/x86")
-	  list(REVERSE _gdi_search_path) # to search first in the more recent SDK
-      FIND_LIBRARY(GDI_LIBRARY gdi32
-                   "$ENV{WINSDK_DIR}/Lib"
-                   "$ENV{WINSDK_HOME}/Lib"
-                   "$ENV{DXSDK_DIR}/Lib"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.0a/Lib"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.0/Lib"
-                   "C:/Program Files/Microsoft SDKs/Windows/v6.1/Lib"
-                   "C:/Program Files/Microsoft SDKs/Windows/v7.0A/Lib"
-                   "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/Lib"
-                   "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1/Lib"
-                   "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A/Lib"
-                   "C:/Program Files (x86)/Windows Kits/8.0/Lib/win8/um/x86"
-                   "C:/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x86"
-                   "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.15063.0/um/x86"
-                   "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.14393.0/um/x86"
-                   ${_gdi_search_path}
-                   "C:/Program Files/Microsoft Platform SDK/Lib"
-                   "C:/DXSDK/Include/Lib"
-                   DOC "Where can the GDI (Graphics Device Interface) library be found"
-                  )
-
-      # Specific path search for Visual Studio .NET 2003
-      IF(MSVC71)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio .NET 2003/Vc7/PlatformSDK/Lib"
-                      )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC71)
-
-      # Specific path search for Visual Studio 2005
-      IF(MSVC80)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio 8/VC/PlatformSDK/Lib"
-                      )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC80)
-
-      # Specific path search for Visual Studio 2008
-      IF(MSVC90)
-        IF(NOT GDI_LIBRARY)
-          FIND_LIBRARY(GDI_LIBRARY gdi32
-                       "C:/Program Files/Microsoft Visual Studio 9/VC/PlatformSDK/Lib"
-                      )
-        ENDIF(NOT GDI_LIBRARY)
-      ENDIF(MSVC90)
-    ENDIF(CMAKE_CL_64)
-  ENDIF(MINGW)
   # if GDI libraries found, then we're ok
-  IF(GDI_LIBRARY)
-    SET(GDI_FOUND "YES")
-    SET(GDI_LIBRARIES ${GDI_LIBRARY})
+  if(GDI_LIBRARY)
+    set(GDI_FOUND TRUE)
+    set(GDI_LIBRARIES ${GDI_LIBRARY})
+  endif()
 
-  ENDIF(GDI_LIBRARY)
-
-  MARK_AS_ADVANCED(GDI_LIBRARY)
-ENDIF(WIN32)
+  mark_as_advanced(GDI_LIBRARY)
+endif()

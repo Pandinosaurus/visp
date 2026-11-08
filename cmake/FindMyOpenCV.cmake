@@ -1,7 +1,7 @@
 #############################################################################
 #
 # ViSP, open source Visual Servoing Platform software.
-# Copyright (C) 2005 - 2019 by Inria. All rights reserved.
+# Copyright (C) 2005 - 2025 by Inria. All rights reserved.
 #
 # This software is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GPL, please contact Inria about acquiring a ViSP Professional
 # Edition License.
 #
-# See http://visp.inria.fr for more information.
+# See https://visp.inria.fr for more information.
 #
 # This software was developed at:
 # Inria Rennes - Bretagne Atlantique
@@ -29,7 +29,7 @@
 # WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
 # Description:
-# Try to find OpenCV framework. 
+# Try to find OpenCV framework.
 #
 # OpenCV_FOUND
 # OpenCV_INCLUDE_DIRS (only for naoqi)
@@ -38,9 +38,6 @@
 # OpenCV_VERSION_MINOR
 # OpenCV_VERSION_PATCH
 # OpenCV_VERSION
-#
-# Authors:
-# Fabien Spindler
 #
 #############################################################################
 
@@ -57,11 +54,11 @@ macro(vp_get_opencv_version_from_hpp FILENAME DEFINE VAR)
       list(GET __list 0 ${VAR})
     else()
       message("Warning: OpenCV macro ${DEFINE} not found in ${FILENAME}. The following var ${VAR} is set to 0. This may produce build issues.")
-      set(${__var} 0)
+      set(${VAR} 0)
     endif()
   else()
-    message("Warning: Cannot retrive OpenCV version from non existing file ${FILENAME}. This may produce build issues.")
-    set(${__var} 0)
+    message("Warning: Cannot retrieve OpenCV version from non existing file ${FILENAME}. This may produce build issues.")
+    set(${VAR} 0)
   endif()
 endmacro()
 
@@ -74,7 +71,7 @@ macro(find_package_naoqi module)
 
   _find_package_naoqi_internal(${module})
 
-  # remove allready treated deps
+  # remove already treated deps
   foreach(__d ${${module}_DEPS_PROCESSED})
     list(FIND ${module}_DEPS ${__d} __index)
     if(NOT __index LESS 0)
@@ -152,12 +149,17 @@ macro(_find_package_naoqi_internal module)
         list(APPEND ${module}_LIBRARIES ${__l})
       endif()
     endforeach()
-    vp_list_unique(${lower_submodule}_LIBRARIES)
+    vp_list_unique(${module}_LIBRARIES)
   endif()
 endmacro()
 
 if(APPLE_FRAMEWORK)
-  find_library(OpenCV_FRAMEWORK opencv2)
+  find_library(OpenCV_FRAMEWORK
+    NAMES opencv2
+    PATHS ${CMAKE_FRAMEWORK_PATH}
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+  )
 
   if(OpenCV_FRAMEWORK)
     set(OpenCV_FOUND TRUE)
@@ -169,6 +171,7 @@ if(APPLE_FRAMEWORK)
     vp_get_opencv_version_from_hpp(${opencv_version_file} "CV_VERSION_MINOR" OpenCV_VERSION_MINOR)
     vp_get_opencv_version_from_hpp(${opencv_version_file} "CV_VERSION_REVISION" OpenCV_VERSION_PATCH)
     set(OpenCV_VERSION "${OpenCV_VERSION_MAJOR}.${OpenCV_VERSION_MINOR}.${OpenCV_VERSION_PATCH}")
+    set(OpenCV_FRAMEWORK_DIR ${OpenCV_FRAMEWORK})
   else()
     set(OpenCV_FOUND FALSE)
   endif()
@@ -204,4 +207,3 @@ if(CMAKE_TOOLCHAIN_FILE AND I_AM_A_ROBOT)
     endforeach()
   endif()
 endif()
-

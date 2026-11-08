@@ -6,7 +6,7 @@
 ViSP is interfaced with OpenCV third party. In this tutorial we explain how to convert data such
 as camera parameters or images from ViSP to OpenCV or \e vice \e versa.
 
-\section tutorial_bridge_opencv_cam Camera parameters conversions
+\section tutorial_bridge_opencv_cam 1. Camera parameters conversions
 
 ViSP camera parameters are implemented in vpCameraParameters class. If you want to calibrate
 a camera with ViSP tools follow \ref tutorial-calibration-intrinsic.
@@ -46,7 +46,7 @@ When \f$Z_c \neq 0\f$, the previous equation is equivalent to the following:
   x &=& X_c / Z_c \\
   y &=& Y_c / Z_c \\
   u &=& u_0 + x \; p_x \\
-  v &=& v_0 + y \; p_y  
+  v &=& v_0 + y \; p_y
   \end{array}
   \f]
 
@@ -92,7 +92,7 @@ The following table gives the correspondences between ViSP and OpenCV parameters
   & k_5 = 0 \\
   & k_6 = 0 \\
   & p_1 = 0 \\
-  & p_2 = 0 
+  & p_2 = 0
   \end{array}
   \f]
 
@@ -105,7 +105,7 @@ These parameters could be used to initialize OpenCV camera parameters:
 
 \snippet tutorial-bridge-opencv-camera-param.cpp Set OpenCV camera parameters
 
-\section tutorial_bridge_opencv_image Image conversions
+\section tutorial_bridge_opencv_image 2. Image conversions
 
 ViSP image is implemented in vpImage class, while OpenCV images in `cv::Mat` class. All the functions
 that allow image conversion from ViSP to OpenCV or \e vice \e versa are implemented in vpImageConvert.
@@ -113,7 +113,7 @@ that allow image conversion from ViSP to OpenCV or \e vice \e versa are implemen
 Some image conversion examples could be found in tutorial-bridge-opencv-camera-param.cpp.
 There is also tutorial-bridge-opencv-image.cpp from where the following snippets are extracted.
 
-\subsection tutorial_bridge_opencv_image_vp_to_cv From ViSP to OpenCV image conversion
+\subsection tutorial_bridge_opencv_image_vp_to_cv 2.1. From ViSP to OpenCV image conversion
 
 - **Color image conversion**
 
@@ -124,18 +124,18 @@ There is also tutorial-bridge-opencv-image.cpp from where the following snippets
   before saving the converted color image
   \snippet tutorial-bridge-opencv-image.cpp Save OpenCV color image
 
-- **Grey scale image conversion**
+- **Gray scale image conversion**
 
-  The following code allows to read a grey scale image with ViSP. Note here that if the
+  The following code allows to read a gray scale image with ViSP. Note here that if the
   input image (ie. `monkey.jpeg`) is a color image, vpImageIo::read() converts implicitly
-  the color image in a grey scale image:
-  \snippet tutorial-bridge-opencv-image.cpp Load ViSP grey image
+  the color image in a gray scale image:
+  \snippet tutorial-bridge-opencv-image.cpp Load ViSP gray image
   and then convert the image in OpenCV using:
-  \snippet tutorial-bridge-opencv-image.cpp Convert to OpenCV grey image
-  before saving the converted grey image
-  \snippet tutorial-bridge-opencv-image.cpp Save OpenCV grey image
+  \snippet tutorial-bridge-opencv-image.cpp Convert to OpenCV gray image
+  before saving the converted gray image
+  \snippet tutorial-bridge-opencv-image.cpp Save OpenCV gray image
 
-\subsection tutorial_bridge_opencv_image_cv_to_vp From OpenCV to ViSP image conversion
+\subsection tutorial_bridge_opencv_image_cv_to_vp 2.2. From OpenCV to ViSP image conversion
 
 - **Color image conversion**
 
@@ -146,16 +146,16 @@ There is also tutorial-bridge-opencv-image.cpp from where the following snippets
   before saving the converted color image
   \snippet tutorial-bridge-opencv-image.cpp Save ViSP color image
 
-- **Grey scale image conversion**
+- **Gray scale image conversion**
 
-  The following code allows to read a grey scale image with OpenCV:
-  \snippet tutorial-bridge-opencv-image.cpp Load OpenCV grey image
+  The following code allows to read a gray scale image with OpenCV:
+  \snippet tutorial-bridge-opencv-image.cpp Load OpenCV gray image
   and then convert the image in ViSP using:
-  \snippet tutorial-bridge-opencv-image.cpp Convert to ViSP grey image
-  before saving the converted grey image
-  \snippet tutorial-bridge-opencv-image.cpp Save ViSP grey image
+  \snippet tutorial-bridge-opencv-image.cpp Convert to ViSP gray image
+  before saving the converted gray image
+  \snippet tutorial-bridge-opencv-image.cpp Save ViSP gray image
 
-\section tutorial_bridge_opencv_matrix Matrix conversions
+\section tutorial_bridge_opencv_matrix 3. Matrix conversions
 
 ViSP matrices are implemented in different classes:
 - vpMatrix for a non specific matrix
@@ -171,9 +171,9 @@ Note that each element of a ViSP matrix is a double and that ViSP matrices are r
 
 In the following subsections we illustrate how to convert a vpMatrix to a `cv::Mat`, but the code could be easily
 adapted to other ViSP specific matrices as long as the corresponding OpenCV matrix contains double
-elements and that it has the same size as the ViSP specific matrix. 
+elements and that it has the same size as the ViSP specific matrix.
 
-\subsection tutorial_bridge_opencv_matrix_cv_to_vp From OpenCV to ViSP matrix conversion
+\subsection tutorial_bridge_opencv_matrix_cv_to_vp 3.1. From OpenCV to ViSP matrix conversion
 
 - The following code also available in tutorial-bridge-opencv-matrix.cpp shows how to create
   an OpenCV row-major matrix with size 3 rows by 4 cols that contains double elements.
@@ -186,17 +186,17 @@ elements and that it has the same size as the ViSP specific matrix.
 
   The content of the matrices is now the following:
   \verbatim
-M_cv: 
+M_cv:
 [1, 2, 3, 4;
  5, 6, 7, 8;
  9, 10, 11, 12]
-M: 
+M:
 1  2  3  4
 5  6  7  8
 9  10  11  12
   \endverbatim
 
-\subsection tutorial_bridge_opencv_matrix_vp_to_cv From ViSP to OpenCV conversion
+\subsection tutorial_bridge_opencv_matrix_vp_to_cv 3.2. From ViSP to OpenCV conversion
 
 - The following code also available in tutorial-bridge-opencv-matrix.cpp shows how to create a ViSP
   row-major matrix with size 3 rows by 4 cols that contains double elements.
@@ -209,11 +209,11 @@ M:
 
   The content of the matrices is now the following:
   \verbatim
-M: 
+M:
 1  2  3  4
 5  6  7  8
 9  10  11  12
-M_cv_deep: 
+M_cv_deep:
 [1, 2, 3, 4;
  5, 6, 7, 8;
  9, 10, 11, 12]
@@ -226,11 +226,11 @@ M_cv_deep:
 
   The content of the matrices is now the following:
   \verbatim
-M: 
+M:
 1  2  3  4
 5  6  7  8
 9  10  11  12
-M_cv: 
+M_cv:
 [1, 2, 3, 4;
  5, 6, 7, 8;
  9, 10, 11, 12]
@@ -243,11 +243,11 @@ M_cv:
   As expected, the content of `M_cv` matrix is also changed:
   \verbatim
 Set M = eye
-M: 
+M:
 1  0  0  0
 0  1  0  0
 0  0  1  0
-M_cv: 
+M_cv:
 [1, 0, 0, 0;
  0, 1, 0, 0;
  0, 0, 1, 0]
